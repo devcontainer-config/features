@@ -1,0 +1,17 @@
+{
+  "id": "dot-config",
+  "version": "0.1.0",
+  "name": ".config/",
+  "description": "Synchronize configuration files from .config/ to devcontainer workspaces.",
+  "keywords": ["dot", "config"],
+  "options": {
+    "workspaces": {
+      "type": "string",
+      "description": "Parent directory of workspaceFolder",
+      "default": "/workspaces"
+    }
+  },
+  "installsAfter": ["ghcr.io/devcontainers/features/node"],
+  "onCreateCommand": "dot-config sync",
+  "postStartCommand": "dot-config watch --detach"
+}

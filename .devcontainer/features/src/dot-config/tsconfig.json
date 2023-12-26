@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.install.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "exclude": []
+}

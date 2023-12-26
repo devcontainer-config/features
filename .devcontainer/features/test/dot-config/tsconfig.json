@@ -1,0 +1,7 @@
+{
+  "extends": "@tsconfig/node20/tsconfig.json",
+  "compilerOptions": {
+    "typeRoots": ["node_modules/@types"],
+    "noEmit": true
+  }
+}

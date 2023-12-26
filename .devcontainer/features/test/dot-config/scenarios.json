@@ -1,0 +1,13 @@
+{
+  "dot_config_workspace": {
+    "image": "devcontainer",
+    "features": {
+      "dot-config": {
+        "workspaces": "/test-workspaces"
+      }
+    },
+    "containerEnv": {
+      "WORKSPACES": "/test-workspaces"
+    }
+  }
+}

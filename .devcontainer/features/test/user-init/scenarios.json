@@ -1,0 +1,9 @@
+{
+  "custom_remote_user_init": {
+    "image": "devcontainer",
+    "remoteUser": "test",
+    "features": {
+      "user-init": {}
+    }
+  }
+}

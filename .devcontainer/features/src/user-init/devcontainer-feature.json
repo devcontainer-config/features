@@ -1,0 +1,8 @@
+{
+  "id": "user-init",
+  "version": "0.1.0",
+  "name": "Initialize User",
+  "description": "Rename user with UID 1000 to remoteUser and setup XDG base directories.",
+  "keywords": ["initialize", "user", "username", "uid", "common-utils"],
+  "installsAfter": ["ghcr.io/devcontainers/features/common-utils"]
+}
