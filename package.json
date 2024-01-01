@@ -5,6 +5,7 @@
     "build": "vite-node scripts/build.ts",
     "fix": "vite-node scripts/fix.ts",
     "lint": "vite-node scripts/lint.ts",
+    "publish": "vite-node scripts/publish.ts",
     "restore": "vite-node scripts/restore.ts",
     "test": "vite-node scripts/test.ts",
     "update": "vite-node scripts/update.ts",
@@ -28,8 +29,10 @@
     "eslint-plugin-unicorn": "50.0.1",
     "eslint-plugin-vitest": "0.3.20",
     "execa": "8.0.1",
+    "git-url-parse": "13.1.1",
     "glob": "10.3.10",
     "globals": "13.24.0",
+    "isomorphic-git": "1.25.2",
     "prettier": "3.1.1",
     "prettier-plugin-packagejson": "2.4.7",
     "syncpack": "11.2.1",
@@ -43,6 +46,7 @@
     "@types/eslint-config-prettier": "6.11.3",
     "@types/eslint__eslintrc": "2.1.1",
     "@types/eslint__js": "8.42.3",
+    "@types/git-url-parse": "9.0.3",
     "@types/node": "20.10.5"
   }
 }

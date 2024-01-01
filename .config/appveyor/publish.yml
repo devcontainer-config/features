@@ -1,0 +1,14 @@
+version: 1.0.{build}
+skip_non_tags: true
+skip_branch_with_pr: true
+image: Ubuntu2004
+build_script:
+  - sh: >-
+      npm install --global @devcontainers/cli
+
+      devcontainer build --image-name devcontainer --workspace-folder .
+deploy_script:
+  - sh: >-
+      devcontainer up --workspace-folder .
+
+      devcontainer exec --workspace-folder . --remote-env CR_PAT=${CR_PAT} pnpm run publish
