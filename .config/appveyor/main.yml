@@ -3,6 +3,8 @@ skip_tags: true
 image: Ubuntu2004
 build_script:
   - sh: >-
+      set -e
+
       npm install --global @devcontainers/cli
 
       devcontainer build --workspace-folder .
