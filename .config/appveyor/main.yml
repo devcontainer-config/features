@@ -10,6 +10,8 @@ build_script:
       devcontainer build --workspace-folder .
 test_script:
   - sh: >-
+      set -e
+
       devcontainer up --workspace-folder .
 
       devcontainer exec --workspace-folder . pnpm lint
