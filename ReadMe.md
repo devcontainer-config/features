@@ -1,5 +1,10 @@
 # Devcontainer Features for Devcontainer Configurations
 
+[AppVeyor Badge]: https://img.shields.io/appveyor/build/gdlol/devcontainer-config-features/main
+[AppVeyor URL]: https://ci.appveyor.com/project/gdlol/devcontainer-config-features/branch/main
+
+[![AppVeyor Badge][AppVeyor Badge]][AppVeyor URL]
+
 A set of devcontainer features for better developer experience setting up devcontainers.
 
 ## [user-init](.devcontainer/features/src/user-init/README.md)
@@ -8,7 +13,7 @@ Most base images for devcontainers comes with a non-root user with UID 1000. Thi
 
 A non-root user can be created via the `ghcr.io/devcontainers/features/common-utils` feature, but it cannot override an existing user with UID 1000. A UID 1000 user in devcontainer is necessary for sensible file permission behavior in the host.
 
-According to Docker behavior, directories mounted as named volumes are owned by root, unless the corresponding directories are created up-front with the correct ownership. This feature creates default XDG base directories for `remoteUser` so that they have the correct ownership when mounted as named volumes.
+According to Docker behavior, directories mounted as named volumes are owned by root, unless created up-front with the correct ownership. This feature creates default XDG base directories for `remoteUser` so that they have the correct ownership when mounted as named volumes.
 
 Use cases:
 
