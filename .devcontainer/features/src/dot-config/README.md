@@ -6,7 +6,7 @@ Synchronize configuration files from .config/ to devcontainer workspaces.
 
 ```json
 "features": {
-    "ghcr.io/devcontainer-config/features/dot-config:0": {}
+    "ghcr.io/devcontainer-config/features/dot-config:1": {}
 }
 ```
 
@@ -15,6 +15,10 @@ Synchronize configuration files from .config/ to devcontainer workspaces.
 | Options Id | Description                         | Type   | Default Value |
 | ---------- | ----------------------------------- | ------ | ------------- |
 | workspaces | Parent directory of workspaceFolder | string | /workspaces   |
+
+## Notes
+
+Requires Node.js.
 
 ---
 
