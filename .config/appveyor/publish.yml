@@ -8,7 +8,7 @@ build_script:
 
       npm install --global @devcontainers/cli
 
-      devcontainer build --image-name devcontainer --workspace-folder .
+      devcontainer build --workspace-folder .
 deploy_script:
   - sh: >-
       set -e
