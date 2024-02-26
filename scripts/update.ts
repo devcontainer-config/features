@@ -1,3 +1,3 @@
 import { $$ } from "@/scripts/shell.js";
 
-await $$`syncpack update`;
+await $$`pnpm update --latest --recursive`;
