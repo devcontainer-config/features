@@ -39,9 +39,9 @@ The feature takes a configuration file `.devcontainer/dot-config.json`, and maps
 Use cases:
 
 - Avoid cluttering the Git project root with configuration files.
-- The parent directory of the project root can be mounted as a named volume, providing persistence and better IO performance for some artifacts like `build/`, `node_modules/`, etc.
+- The parent directory of the project root can be mounted as a named volume, providing persistence across rebuild and better IO performance for some artifacts like `build/`, `node_modules/`, etc.
 
 Notes:
 
 - The choice of the `.config/` directory comes from the default value `${HOME}/.config` of `XDG_CONFIG_HOME`.
-- In the view of affected tools, the project root becomes the parent directory of the Git project root, which may require some adjustments in usage.
+- In the view of affected tools, the project root becomes the parent directory of the Git project root, some adjustments in usage may be required.

@@ -2,38 +2,37 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { FlatCompat } from "@eslint/eslintrc";
-import js from "@eslint/js";
-import type { Linter } from "eslint";
+import eslint from "@eslint/js";
 import prettier from "eslint-config-prettier";
 import { gitignore } from "eslint-flat-config-gitignore";
 import globals from "globals";
+import tsESLint from "typescript-eslint";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const compat = new FlatCompat({ baseDirectory: __dirname });
 
-export default [
+export default tsESLint.config(
   await gitignore(__dirname),
   {
     languageOptions: { globals: globals.node },
     linterOptions: { reportUnusedDisableDirectives: true },
   },
-  js.configs.recommended,
+  eslint.configs.recommended,
+  {
+    files: ["**/*.{ts,tsx,cts,mts}"],
+    extends: [...tsESLint.configs.recommendedTypeChecked, ...tsESLint.configs.stylisticTypeChecked],
+    languageOptions: {
+      parserOptions: { project: true, tsConfigRootDir: __dirname },
+    },
+    rules: {
+      "@typescript-eslint/consistent-type-exports": "error",
+      "@typescript-eslint/consistent-type-imports": "error",
+    },
+  },
   ...compat.config({
     overrides: [
-      {
-        files: ["*.{ts,tsx,cts,mts}"],
-        extends: [
-          "plugin:@typescript-eslint/recommended-type-checked",
-          "plugin:@typescript-eslint/stylistic-type-checked",
-        ],
-        parserOptions: { project: true, tsConfigRootDir: __dirname },
-        rules: {
-          "@typescript-eslint/consistent-type-exports": "error",
-          "@typescript-eslint/consistent-type-imports": "error",
-        },
-      },
       {
         files: ["*.test.{ts,tsx,cts,mts}"],
         extends: ["plugin:vitest/recommended"],
@@ -55,4 +54,4 @@ export default [
     rules: { "unicorn/prefer-module": "error" },
   },
   prettier,
-] satisfies Linter.FlatConfig[];
+);
