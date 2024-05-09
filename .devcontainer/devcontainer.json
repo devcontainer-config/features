@@ -8,9 +8,7 @@
   "features": {
     "./features/src/dot-config": {},
     "./features/src/user-init": {},
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
-      "dockerDashComposeVersion": "v2"
-    }
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
   "customizations": {
     "vscode": {
@@ -46,6 +44,6 @@
       }
     }
   },
-  "onCreateCommand": "pnpm install && pnpm run restore",
+  "onCreateCommand": "corepack install && pnpm install && pnpm run restore",
   "postStartCommand": "pnpm watch --detach"
 }

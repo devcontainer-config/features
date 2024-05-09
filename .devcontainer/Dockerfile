@@ -1,3 +1,3 @@
 FROM mcr.microsoft.com/devcontainers/javascript-node:20-buster
 
-RUN npm install --global pnpm@8.15.4
+RUN npm uninstall --global pnpm && corepack enable

@@ -1,6 +1,6 @@
 {
   "id": "dot-config",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "name": ".config/",
   "description": "Synchronize configuration files from .config/ to devcontainer workspaces.",
   "keywords": ["dot", "config"],

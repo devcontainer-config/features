@@ -5,6 +5,9 @@ import { FlatCompat } from "@eslint/eslintrc";
 import eslint from "@eslint/js";
 import prettier from "eslint-config-prettier";
 import { gitignore } from "eslint-flat-config-gitignore";
+import simpleImportSort from "eslint-plugin-simple-import-sort";
+import eslintPluginUnicorn from "eslint-plugin-unicorn";
+import vitest from "eslint-plugin-vitest";
 import globals from "globals";
 import tsESLint from "typescript-eslint";
 
@@ -31,17 +34,17 @@ export default tsESLint.config(
       "@typescript-eslint/consistent-type-imports": "error",
     },
   },
-  ...compat.config({
-    overrides: [
-      {
-        files: ["*.test.{ts,tsx,cts,mts}"],
-        extends: ["plugin:vitest/recommended"],
-      },
-    ],
-  }),
-  ...compat.plugins("import", "simple-import-sort", "unicorn"),
+  {
+    files: ["**/*.test.{ts,tsx,cts,mts}"],
+    extends: [vitest.configs.recommended],
+  },
+  ...compat.plugins("import"),
   {
     files: ["**/*.{ts,tsx,cts,mts}"],
+    plugins: {
+      "simple-import-sort": simpleImportSort,
+      unicorn: eslintPluginUnicorn,
+    },
     rules: {
       "import/no-extraneous-dependencies": "error",
       "simple-import-sort/exports": "error",
@@ -51,6 +54,7 @@ export default tsESLint.config(
   },
   {
     files: ["**/*.{ts,tsx,mts}"],
+    plugins: { unicorn: eslintPluginUnicorn },
     rules: { "unicorn/prefer-module": "error" },
   },
   prettier,
