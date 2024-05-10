@@ -2,19 +2,6 @@
   "version": "0.2",
   "enableGlobDot": true,
   "useGitignore": true,
-  "ignorePaths": ["**/node_modules/**"],
-  "words": [
-    "Codecov",
-    "devcontainer",
-    "devcontainers",
-    "execa",
-    "gdlol",
-    "hasha",
-    "memfs",
-    "packagejson",
-    "pnpmfile",
-    "rsort",
-    "syncpack",
-    "usermod"
-  ]
+  "ignorePaths": ["**/node_modules/**", "LICENSE"],
+  "words": ["corepack", "devcontainer", "devcontainers", "execa", "hasha", "packagejson", "syncpack"]
 }

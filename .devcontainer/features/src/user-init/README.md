@@ -6,7 +6,7 @@ Rename user with UID 1000 to remoteUser and setup XDG base directories.
 
 ```json
 "features": {
-    "ghcr.io/devcontainer-config/features/user-init:1": {}
+    "ghcr.io/devcontainer-config/features/user-init:2": {}
 }
 ```
 

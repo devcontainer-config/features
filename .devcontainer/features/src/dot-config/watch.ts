@@ -17,13 +17,10 @@ export const watch = (projectRoot: string) => {
           if (eventName === "add" || eventName === "change" || eventName === "unlink") {
             void (async () => {
               try {
-                if (path === sourcePath) {
-                  winston.info(`[${eventName}] ${sourcePath} -> ${targetPath}`);
-                  await syncFile(sourcePath, targetPath, eventName);
-                } else if (path === targetPath) {
-                  winston.info(`[${eventName}] ${targetPath} -> ${sourcePath}`);
-                  await syncFile(targetPath, sourcePath, eventName);
-                }
+                const direction = path === sourcePath ? "->" : "<-";
+                winston.info(`[${eventName}] ${sourcePath} ${direction} ${targetPath}`);
+                const eventSource = path === sourcePath ? "source" : "target";
+                await syncFile(sourcePath, targetPath, eventSource, eventName);
               } catch (error) {
                 winston.error("syncFile:", error);
               }

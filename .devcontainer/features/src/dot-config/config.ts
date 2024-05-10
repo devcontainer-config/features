@@ -1,6 +1,8 @@
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
+import winston from "winston";
 import { z } from "zod";
 
 const sourcePathSchema = z.string().describe("Relative path to .config/${key}");
@@ -12,6 +14,11 @@ export const getDotConfigJsonPath = (projectRoot: string) => path.resolve(projec
 export const parseConfig = async (projectRoot: string) => {
   const workspaces = path.resolve(projectRoot, "..");
   const configRoot = path.resolve(projectRoot, ".config");
+  const dotConfigJsonPath = getDotConfigJsonPath(projectRoot);
+  if (!existsSync(dotConfigJsonPath)) {
+    winston.warn(`${dotConfigJsonPath} not found.`);
+    return [];
+  }
   const configText = await readFile(getDotConfigJsonPath(projectRoot), "utf-8");
   const config = dotConfigSchema.parse(JSON.parse(configText));
 

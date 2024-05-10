@@ -6,7 +6,7 @@ Synchronize configuration files from .config/ to devcontainer workspaces.
 
 ```json
 "features": {
-    "ghcr.io/devcontainer-config/features/dot-config:1": {}
+    "ghcr.io/devcontainer-config/features/dot-config:2": {}
 }
 ```
 

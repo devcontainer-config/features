@@ -1,4 +1,4 @@
 lockfile=false
-save-prefix=''
+save-prefix=
 resolution-mode=time-based
 store-dir=/home/dev/.local/share/pnpm/store
