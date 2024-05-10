@@ -1,12 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { $ } from "execa";
 import { readBlob } from "isomorphic-git";
 import git from "isomorphic-git";
 import http from "isomorphic-git/http/node";
 
 import { projectRoot } from "@/scripts/project.js";
-import { $$ } from "@/scripts/shell.js";
+import { shellOptions } from "@/scripts/shell.js";
 
 const defaultBranch = "main";
 
@@ -53,6 +54,7 @@ for (const filepath of files) {
 
 // Push new tags
 for (const tag of newTags) {
-  await $$`git tag ${tag} ${remote.remote}/${defaultBranch}`;
+  console.log(`Tagging ${tag}...`);
+  await git.tag({ fs, dir: projectRoot, ref: tag, object: remoteHead });
 }
-await $$`git push ${remote.remote} --tags`;
+await $({ ...shellOptions, cwd: projectRoot })`git push ${remote.remote} --tags`;
