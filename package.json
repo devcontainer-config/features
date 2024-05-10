@@ -48,6 +48,5 @@
     "@types/eslint__js": "8.42.3",
     "@types/git-url-parse": "9.0.3",
     "@types/node": "20.12.11"
-  },
-  "packageManager": "pnpm@9.1.0"
+  }
 }

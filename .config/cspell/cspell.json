@@ -3,5 +3,5 @@
   "enableGlobDot": true,
   "useGitignore": true,
   "ignorePaths": ["**/node_modules/**", "LICENSE"],
-  "words": ["corepack", "devcontainer", "devcontainers", "execa", "hasha", "packagejson", "syncpack"]
+  "words": ["devcontainer", "devcontainers", "execa", "hasha", "packagejson", "syncpack"]
 }
