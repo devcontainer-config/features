@@ -1,6 +1,6 @@
 {
   "id": "user-init",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "name": "Initialize User",
   "description": "Rename user with UID 1000 to remoteUser and setup XDG base directories.",
   "keywords": ["initialize", "user", "username", "uid", "common-utils"],

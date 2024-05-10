@@ -1,5 +1,7 @@
 #!/bin/sh
 set -e
 
-npm install
-npm run install-feature
+PNPM=pnpm@latest-9
+
+npx --yes ${PNPM} install
+npx --yes ${PNPM} run install-feature
