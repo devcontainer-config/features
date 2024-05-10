@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { program } from "@commander-js/extra-typings";
 import { $ } from "execa";
 import winston from "winston";

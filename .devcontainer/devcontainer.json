@@ -44,6 +44,6 @@
       }
     }
   },
-  "onCreateCommand": "corepack install && pnpm install && pnpm run restore",
+  "onCreateCommand": "corepack install && pnpm install && pnpm restore",
   "postStartCommand": "pnpm watch --detach"
 }
