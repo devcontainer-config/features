@@ -1,4 +1,7 @@
 version: 1.0.{build}
+branches:
+  only:
+    - main
 skip_tags: true
 image: Ubuntu2004
 build_script:
