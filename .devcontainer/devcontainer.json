@@ -1,24 +1,24 @@
+// spell-checker:ignore esbenp azuretools dbaeumer
 {
   "name": "devcontainer-config-features",
   "dockerComposeFile": "docker-compose.yml",
   "service": "devcontainer",
-  "overrideCommand": true,
   "remoteUser": "dev",
+  "overrideCommand": true,
   "workspaceFolder": "/workspaces/devcontainer-config-features",
   "features": {
-    "./features/src/dot-config": {},
     "./features/src/user-init": {},
+    "./features/src/dot-config": {},
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
   "customizations": {
     "vscode": {
-      // spell-checker:ignore dbaeumer esbenp azuretools zixuanchen
       "extensions": [
-        "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "ms-azuretools.vscode-docker",
         "streetsidesoftware.code-spell-checker",
-        "zixuanchen.vitest-explorer"
+        "dbaeumer.vscode-eslint",
+        "vitest.explorer"
       ],
       "settings": {
         "files.associations": {
@@ -28,16 +28,17 @@
         },
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "editor.codeActionsOnSave": {
-          "source.fixAll.eslint": "explicit"
-        },
         "[dockerfile]": {
           "editor.defaultFormatter": "ms-azuretools.vscode-docker"
         },
         "cSpell.autoFormatConfigFile": true,
         "cSpell.checkOnlyEnabledFileTypes": false,
-        "eslint.experimental.useFlatConfig": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "eslint.runtime": "/usr/local/bin/node",
         "eslint.workingDirectories": ["/workspaces"],
+        "eslint.experimental.useFlatConfig": true,
         "typescript.preferences.importModuleSpecifier": "non-relative",
         "typescript.preferences.includePackageJsonAutoImports": "on",
         "typescript.tsdk": "/workspaces/node_modules/typescript/lib"
@@ -45,5 +46,5 @@
     }
   },
   "onCreateCommand": "pnpm install && pnpm restore",
-  "postStartCommand": "pnpm watch --detach"
+  "postAttachCommand": "pnpm watch --detach"
 }

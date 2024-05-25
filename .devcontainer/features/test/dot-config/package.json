@@ -6,10 +6,10 @@
   },
   "dependencies": {
     "@tsconfig/node20": "^20.1.4",
-    "execa": "^8.0.1",
+    "execa": "^9.1.0",
     "vitest": "^1.6.0"
   },
   "devDependencies": {
-    "@types/node": "^20.12.11"
+    "@types/node": "^20.12.12"
   }
 }

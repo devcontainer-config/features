@@ -1,6 +1,3 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
 import { FlatCompat } from "@eslint/eslintrc";
 import eslint from "@eslint/js";
 import prettier from "eslint-config-prettier";
@@ -11,13 +8,10 @@ import vitest from "eslint-plugin-vitest";
 import globals from "globals";
 import tsESLint from "typescript-eslint";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const compat = new FlatCompat({ baseDirectory: __dirname });
+const compat = new FlatCompat({ baseDirectory: import.meta.dirname });
 
 export default tsESLint.config(
-  await gitignore(__dirname),
+  await gitignore(import.meta.dirname),
   {
     languageOptions: { globals: globals.node },
     linterOptions: { reportUnusedDisableDirectives: true },
@@ -27,7 +21,7 @@ export default tsESLint.config(
     files: ["**/*.{ts,tsx,cts,mts}"],
     extends: [...tsESLint.configs.recommendedTypeChecked, ...tsESLint.configs.stylisticTypeChecked],
     languageOptions: {
-      parserOptions: { project: true, tsConfigRootDir: __dirname },
+      parserOptions: { project: true, tsConfigRootDir: import.meta.dirname },
     },
     rules: {
       "@typescript-eslint/consistent-type-exports": "error",

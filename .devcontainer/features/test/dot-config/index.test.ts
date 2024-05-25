@@ -16,7 +16,7 @@ test("dot-config sync", async () => {
   const tempPath = path.resolve(tmpdir(), "workspaces-sync/test");
   await mkdir(path.resolve(tempPath, ".devcontainer"), { recursive: true });
   await mkdir(path.resolve(tempPath, ".config/test"), { recursive: true });
-  const $$ = $({ stdio: "inherit", verbose: true, cwd: tempPath });
+  const $$ = $({ stdio: "inherit", verbose: "full", cwd: tempPath });
 
   await writeFile(
     path.resolve(tempPath, ".devcontainer/dot-config.json"),
@@ -64,7 +64,7 @@ test("dot-config watch", async () => {
   const tempPath = path.resolve(tmpdir(), "workspaces-watch/test");
   await mkdir(path.resolve(tempPath, ".devcontainer"), { recursive: true });
   await mkdir(path.resolve(tempPath, ".config/test"), { recursive: true });
-  const $$ = $({ stdio: "inherit", verbose: true, cwd: tempPath });
+  const $$ = $({ stdio: "inherit", verbose: "full", cwd: tempPath });
 
   await writeFile(
     path.resolve(tempPath, ".devcontainer/dot-config.json"),
