@@ -10,7 +10,7 @@ import { watch } from "./watch.js";
 await initializeLogger();
 const projectRoot = process.cwd();
 
-program.name(packageJson.name);
+program.name(packageJson.name).version(packageJson.version);
 
 program
   .command("sync")
