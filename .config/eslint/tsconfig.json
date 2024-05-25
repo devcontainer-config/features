@@ -1,3 +1,6 @@
 {
-  "extends": "../typescript/tsconfig.node.json"
+  "extends": "../typescript/tsconfig.node.json",
+  "compilerOptions": {
+    "noEmitOnError": true
+  }
 }

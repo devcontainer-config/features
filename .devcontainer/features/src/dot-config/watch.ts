@@ -4,9 +4,12 @@ import chokidar from "chokidar";
 import winston from "winston";
 
 import { getDotConfigJsonPath, parseConfig } from "./config.js";
+import { createAsyncLock } from "./lock.js";
 import { syncFile } from "./sync.js";
 
 export const watch = (projectRoot: string) => {
+  const lock = createAsyncLock();
+
   let watchers: chokidar.FSWatcher[] = [];
   const initializeWatchers = async () => {
     try {
@@ -20,7 +23,7 @@ export const watch = (projectRoot: string) => {
                 const direction = path === sourcePath ? "->" : "<-";
                 winston.info(`[${eventName}] ${sourcePath} ${direction} ${targetPath}`);
                 const eventSource = path === sourcePath ? "source" : "target";
-                await syncFile(sourcePath, targetPath, eventSource, eventName);
+                await lock.invoke(() => syncFile(sourcePath, targetPath, eventSource, eventName));
               } catch (error) {
                 winston.error("syncFile:", error);
               }
@@ -42,10 +45,10 @@ export const watch = (projectRoot: string) => {
 
   chokidar.watch(getDotConfigJsonPath(projectRoot)).on("all", (eventName) => {
     if (eventName === "add" || eventName === "change") {
-      void initializeWatchers();
+      void lock.invoke(() => initializeWatchers());
     }
   });
   chokidar.watch(path.resolve(projectRoot, ".config"), { ignoreInitial: true }).on("addDir", () => {
-    void initializeWatchers();
+    void lock.invoke(() => initializeWatchers());
   });
 };

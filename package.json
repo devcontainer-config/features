@@ -32,7 +32,6 @@
     "execa": "^9.1.0",
     "git-url-parse": "^14.0.0",
     "glob": "^10.4.1",
-    "globals": "^15.3.0",
     "isomorphic-git": "^1.25.10",
     "prettier": "^3.2.5",
     "prettier-plugin-packagejson": "^2.5.0",
