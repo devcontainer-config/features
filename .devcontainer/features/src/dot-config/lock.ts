@@ -3,23 +3,17 @@ export interface AsyncLock {
 }
 
 export const createAsyncLock = (): AsyncLock => {
-  const lock = {
-    isLocked: false,
-    pending: Promise.resolve(),
-  };
+  const lock = { pending: Promise.resolve() };
   return {
     invoke: async <T>(f: () => Promise<T>) => {
-      while (lock.isLocked) {
-        await lock.pending;
-      }
-      lock.isLocked = true;
+      const pending = lock.pending;
       const resolver: { resolve?: () => void } = {};
+      lock.pending = lock.pending.then(() => new Promise((resolve) => (resolver.resolve = resolve)));
+      await pending;
       try {
-        lock.pending = new Promise((resolve) => (resolver.resolve = resolve));
         return await f();
       } finally {
-        lock.isLocked = false;
-        resolver.resolve?.();
+        resolver.resolve!();
       }
     },
   };
