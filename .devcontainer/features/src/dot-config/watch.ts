@@ -1,5 +1,6 @@
 import path from "node:path";
 
+import type { FSWatcher } from "chokidar";
 import chokidar from "chokidar";
 import winston from "winston";
 
@@ -10,10 +11,10 @@ import { syncFile } from "./sync.js";
 export const watch = (projectRoot: string) => {
   const lock = createAsyncLock();
 
-  let watchers: chokidar.FSWatcher[] = [];
+  let watchers: FSWatcher[] = [];
   const initializeWatchers = async () => {
     try {
-      const newWatchers: chokidar.FSWatcher[] = [];
+      const newWatchers: FSWatcher[] = [];
       const mappings = await parseConfig(projectRoot);
       for (const { sourcePath, targetPath } of mappings) {
         const watcher = chokidar.watch([sourcePath, targetPath]).on("all", (eventName, path) => {

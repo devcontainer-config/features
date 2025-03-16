@@ -2,6 +2,7 @@
   "version": "0.2",
   "enableGlobDot": true,
   "useGitignore": true,
+  "gitignoreRoot": ".",
   "ignorePaths": ["**/node_modules/**", "LICENSE"],
   "words": ["devcontainer", "devcontainers", "execa", "hasha", "packagejson", "syncpack"]
 }

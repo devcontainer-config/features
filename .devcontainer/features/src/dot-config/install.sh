@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-PNPM=pnpm@latest-9
+PNPM=pnpm@latest-10
 
 export npm_config_resolution_mode=time-based
 npx --yes ${PNPM} install

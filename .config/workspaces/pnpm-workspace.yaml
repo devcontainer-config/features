@@ -1,3 +1,3 @@
 packages:
-  - "devcontainer-config-features/**"
-  - "devcontainer-config-features/.devcontainer/**"
+  - "devcontainer-config-features/.devcontainer/features/src/*"
+  - "devcontainer-config-features/.devcontainer/features/test/*"
