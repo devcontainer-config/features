@@ -52,7 +52,7 @@ const waitFor = <T>(callback: () => T | Promise<T>, timeout = 1000): Promise<T> 
         const result = await callback();
         clearTimeout(timer);
         resolve(result);
-      } catch (error) {
+      } catch {
         setTimeout(() => void check(), 100);
       }
     };

@@ -1,12 +1,14 @@
 // spell-checker:ignore esbenp azuretools dbaeumer
 {
   "name": "devcontainer-config-features",
-  "dockerComposeFile": "docker-compose.yml",
+  "dockerComposeFile": "compose.yaml",
   "service": "devcontainer",
   "remoteUser": "dev",
   "overrideCommand": true,
   "workspaceFolder": "/workspaces/devcontainer-config-features",
   "features": {
+    // "ghcr.io/devcontainer-config/features/user-init:2": {},
+    // "ghcr.io/devcontainer-config/features/dot-config:2": {},
     "./features/src/user-init": {},
     "./features/src/dot-config": {},
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
@@ -38,13 +40,11 @@
         },
         "eslint.runtime": "/usr/local/bin/node",
         "eslint.workingDirectories": ["/workspaces"],
-        "eslint.experimental.useFlatConfig": true,
         "typescript.preferences.importModuleSpecifier": "non-relative",
         "typescript.preferences.includePackageJsonAutoImports": "on",
         "typescript.tsdk": "/workspaces/node_modules/typescript/lib"
       }
     }
   },
-  "onCreateCommand": "pnpm install && pnpm restore",
-  "postAttachCommand": "pnpm watch --detach"
+  "onCreateCommand": "pnpm install && pnpm restore || true"
 }

@@ -23,6 +23,7 @@ await $$`chmod a=rwx ${workspacesPath}`;
 await $$`tsc --project ${path.resolve(import.meta.dirname, "tsconfig.install.json")} --outDir .`;
 await writeFile(path.resolve(tempPath, "package.json"), JSON.stringify(packageJson, null, 2));
 await writeFile(path.resolve(tempPath, "pnpm-workspace.yaml"), "");
+await writeFile(path.resolve(tempPath, ".npmrc"), `inject-workspace-packages=true\n`);
 await insertShebang(path.resolve(tempPath, "index.js"));
 await $$`pnpm deploy --filter=dot-config --prod ${featureInstallPath}`;
 await $$`npm install --global ${featureInstallPath}`;

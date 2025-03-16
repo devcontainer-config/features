@@ -10,7 +10,7 @@ import git from "isomorphic-git";
 import http from "isomorphic-git/http/node";
 import * as prettier from "prettier";
 
-import prettierOptions from "@/.config/prettier/.prettierrc.json";
+import prettierOptions from "@/.config/prettier/.prettierrc.json" with { type: "json" };
 import { projectRoot } from "@/scripts/project.js";
 import { shellOptions } from "@/scripts/shell.js";
 

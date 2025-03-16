@@ -1,13 +1,11 @@
-import { FlatCompat } from "@eslint/eslintrc";
 import eslint from "@eslint/js";
+import vitest from "@vitest/eslint-plugin";
 import prettier from "eslint-config-prettier";
 import { gitignore } from "eslint-flat-config-gitignore";
+import importPlugin from "eslint-plugin-import";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import eslintPluginUnicorn from "eslint-plugin-unicorn";
-import vitest from "eslint-plugin-vitest";
 import tsESLint from "typescript-eslint";
-
-const compat = new FlatCompat({ baseDirectory: import.meta.dirname });
 
 export default tsESLint.config(
   await gitignore(import.meta.dirname),
@@ -28,12 +26,12 @@ export default tsESLint.config(
     files: ["**/*.test.{ts,tsx,cts,mts}"],
     extends: [vitest.configs.recommended],
   },
-  ...compat.plugins("import"),
   {
     files: ["**/*.{ts,tsx,cts,mts}"],
     plugins: {
       "simple-import-sort": simpleImportSort,
       unicorn: eslintPluginUnicorn,
+      import: importPlugin,
     },
     rules: {
       "import/no-extraneous-dependencies": "error",
