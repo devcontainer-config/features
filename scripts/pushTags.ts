@@ -65,7 +65,7 @@ for (const tag of newTags) {
     ref: tag,
     onAuth: () => ({
       username: "git",
-      password: process.env.GIT_ORIGIN_TOKEN,
+      password: token,
     }),
   });
   console.log(`Pushed tag ${tag} to remote ${remote.remote}`);
