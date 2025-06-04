@@ -4,5 +4,6 @@ _*
 !**/.devcontainer/**
 !.config/
 !**/.config/**
+local.env
 
 node_modules/

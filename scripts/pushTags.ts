@@ -1,21 +1,21 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { $ } from "execa";
 import { readBlob } from "isomorphic-git";
 import git from "isomorphic-git";
 import http from "isomorphic-git/http/node";
 
 import { projectRoot } from "@/scripts/project.js";
-import { shellOptions } from "@/scripts/shell.js";
 
 const defaultBranch = "main";
-
-// Get remote head hash.
 const remote = (await git.listRemotes({ fs, dir: projectRoot })).at(0);
 if (remote === undefined) {
   throw new Error("Git remote not found");
 }
+const token = process.env.GIT_REMOTE_TOKEN;
+if (!token) throw new Error("GIT_REMOTE_TOKEN environment variable is not set");
+
+// Get remote head hash.
 const { fetchHead: remoteHead } = await git.fetch({
   fs,
   http,
@@ -56,5 +56,17 @@ for (const filepath of files) {
 for (const tag of newTags) {
   console.log(`Tagging ${tag}...`);
   await git.tag({ fs, dir: projectRoot, ref: tag, object: remoteHead });
+  // Push the tag to the remote repository
+  await git.push({
+    fs,
+    http,
+    dir: projectRoot,
+    remote: remote.remote,
+    ref: tag,
+    onAuth: () => ({
+      username: "git",
+      password: process.env.GIT_ORIGIN_TOKEN,
+    }),
+  });
+  console.log(`Pushed tag ${tag} to remote ${remote.remote}`);
 }
-await $({ ...shellOptions, cwd: projectRoot })`git push ${remote.remote} --tags`;
