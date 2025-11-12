@@ -5,10 +5,10 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@tsconfig/node22": "^22.0.2",
-    "vitest": "^3.2.1"
+    "@tsconfig/node24": "^24.0.1",
+    "vitest": "^4.0.8"
   },
   "devDependencies": {
-    "@types/node": "^22.15.29"
+    "@types/node": "^24.10.1"
   }
 }

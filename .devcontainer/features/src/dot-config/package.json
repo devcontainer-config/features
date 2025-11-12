@@ -8,18 +8,18 @@
   "dependencies": {
     "@commander-js/extra-typings": "^14.0.0",
     "chokidar": "^4.0.3",
-    "commander": "~14.0.0",
+    "commander": "~14.0.2",
     "execa": "^9.6.0",
-    "winston": "^3.17.0",
-    "write-file-atomic": "^6.0.0",
-    "zod": "^3.25.51"
+    "winston": "^3.18.3",
+    "write-file-atomic": "^7.0.0",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@tsconfig/node22": "^22.0.2",
-    "@types/node": "^22.15.29",
+    "@tsconfig/node24": "^24.0.1",
+    "@types/node": "^24.10.1",
     "@types/write-file-atomic": "^4.0.3",
-    "typescript": "^5.8.3",
-    "vite-node": "^3.2.1"
+    "typescript": "^5.9.3",
+    "vite-node": "^5.0.0"
   },
   "engines": {
     "node": ">=22"

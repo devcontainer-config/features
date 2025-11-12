@@ -3,6 +3,6 @@
   "enableGlobDot": true,
   "useGitignore": true,
   "gitignoreRoot": ".",
-  "ignorePaths": ["**/node_modules/**", "LICENSE", "local.env"],
+  "ignorePaths": ["**/node_modules/**", "LICENSE"],
   "words": ["devcontainer", "devcontainers", "execa", "hasha", "packagejson", "syncpack"]
 }
