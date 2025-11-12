@@ -26,7 +26,7 @@ Example usage:
 
 - [.env](.devcontainer/.env)
 
-- [docker-compose.yml](.devcontainer/docker-compose.yml)
+- [compose.yaml](.devcontainer/compose.yaml)
 
 ## [dot-config](.devcontainer/features/src/dot-config/README.md)
 
