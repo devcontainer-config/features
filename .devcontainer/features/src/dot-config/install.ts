@@ -17,8 +17,15 @@ await mkdir(tempPath, { recursive: true });
 await mkdir(featureInstallPath, { recursive: true });
 await mkdir(workspacesPath, { recursive: true });
 
-process.env.NODE_ENV = "production";
-const $$ = $({ stdio: "inherit", verbose: "full", cwd: tempPath });
+const $$ = $({
+  stdio: "inherit",
+  verbose: "full",
+  cwd: tempPath,
+  env: {
+    ...process.env,
+    NODE_ENV: "production",
+  },
+});
 await $$`chmod a=rwx ${workspacesPath}`;
 await $$`tsc --project ${path.resolve(import.meta.dirname, "tsconfig.install.json")} --outDir .`;
 await writeFile(path.resolve(tempPath, "package.json"), JSON.stringify(packageJson, null, 2));
@@ -26,5 +33,5 @@ await writeFile(path.resolve(tempPath, "pnpm-workspace.yaml"), "");
 await insertShebang(path.resolve(tempPath, "index.js"));
 await $$`pnpm install`;
 await $$`pnpm deploy --filter=dot-config --prod ${featureInstallPath}`;
-await $$`npm install --global ${featureInstallPath}`;
+await $$`pnpm install --global ${featureInstallPath}`;
 await $$`rm --recursive ${tempPath}`;
