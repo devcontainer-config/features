@@ -8,9 +8,10 @@
   "workspaceFolder": "/workspaces/devcontainer-config-features",
   "features": {
     // "ghcr.io/devcontainer-config/features/user-init:2": {},
-    // "ghcr.io/devcontainer-config/features/dot-config:2": {},
+    // "ghcr.io/devcontainer-config/features/dot-config:3": {},
     "./features/src/user-init": {},
     "./features/src/dot-config": {},
+    "./features/src/unset-git-credential-helper": {},
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
   "customizations": {

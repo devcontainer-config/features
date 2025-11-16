@@ -1,0 +1,8 @@
+{
+  "id": "unset-git-credential-helper",
+  "version": "0.0.1",
+  "name": "Unset Git Credential Helper",
+  "description": "Unset Git credential helper from Devcontainer extension.",
+  "keywords": ["git", "credential", "helper", "unset"],
+  "postAttachCommand": "(git config unset --global credential.helper && sudo git config unset --system credential.helper) || true"
+}
