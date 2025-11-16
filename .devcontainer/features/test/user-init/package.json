@@ -5,8 +5,8 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@tsconfig/node24": "^24.0.1",
-    "vitest": "^4.0.8"
+    "@tsconfig/node24": "^24.0.2",
+    "vitest": "^4.0.9"
   },
   "devDependencies": {
     "@types/node": "^24.10.1"
