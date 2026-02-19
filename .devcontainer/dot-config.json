@@ -10,7 +10,7 @@
     "rc": "/home/dev/.config/pnpm/rc"
   },
   "eslint": {
-    "eslint.config.ts": "eslint.config.ts"
+    "config.ts": "eslint.config.ts"
   },
   "prettier": {
     ".prettierrc.json": ".prettierrc.json"

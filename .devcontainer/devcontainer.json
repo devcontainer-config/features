@@ -5,7 +5,14 @@
   "service": "devcontainer",
   "remoteUser": "dev",
   "overrideCommand": true,
-  "workspaceFolder": "/workspaces/devcontainer-config-features",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "mounts": [
+    {
+      "type": "bind",
+      "source": "${localWorkspaceFolder}",
+      "target": "/workspaces/${localWorkspaceFolderBasename}"
+    }
+  ],
   "features": {
     // "ghcr.io/devcontainer-config/features/user-init:2": {},
     // "ghcr.io/devcontainer-config/features/dot-config:3": {},

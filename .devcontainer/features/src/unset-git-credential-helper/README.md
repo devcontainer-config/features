@@ -1,6 +1,6 @@
 # Unset Git Credential Helper (unset-git-credential-helper)
 
-Reset Git credential helper from Devcontainer extension.
+Unset Git credential helper from Devcontainer extension.
 
 ## Example Usage
 
