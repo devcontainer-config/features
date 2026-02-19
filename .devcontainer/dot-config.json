@@ -1,13 +1,13 @@
 {
   "git": {
-    "attributes": "/home/dev/.config/git/attributes",
-    "ignore": "/home/dev/.config/git/ignore"
+    "attributes": "/etc/devcontainer-config/git/attributes",
+    "ignore": "/etc/devcontainer-config/git/ignore"
   },
   "cspell": {
     "cspell.json": "cspell.json"
   },
   "pnpm": {
-    "rc": "/home/dev/.config/pnpm/rc"
+    "rc": "/etc/devcontainer-config/pnpm/rc"
   },
   "eslint": {
     "config.ts": "eslint.config.ts"

@@ -11,6 +11,11 @@
       "type": "bind",
       "source": "${localWorkspaceFolder}",
       "target": "/workspaces/${localWorkspaceFolderBasename}"
+    },
+    {
+      "type": "volume",
+      "source": "WORKSPACES",
+      "target": "/workspaces"
     }
   ],
   "features": {
