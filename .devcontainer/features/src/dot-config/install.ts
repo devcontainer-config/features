@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { $ } from "execa";
 
+import { cachePath } from "./config.js";
 import { packageJson } from "./package.js";
 
 const insertShebang = async (path: string) => {
@@ -16,6 +17,7 @@ const workspacesPath = process.env.WORKSPACES ?? "/workspaces";
 await mkdir(tempPath, { recursive: true });
 await mkdir(featureInstallPath, { recursive: true });
 await mkdir(workspacesPath, { recursive: true });
+await mkdir(cachePath, { recursive: true });
 
 const $$ = $({
   stdio: "inherit",
@@ -26,7 +28,8 @@ const $$ = $({
     NODE_ENV: "production",
   },
 });
-await $$`chmod a=rwx ${workspacesPath}`;
+await $$`chmod -R a=rwx ${workspacesPath}`;
+await $$`chmod -R a=rwx ${cachePath}`;
 await $$`tsc --project ${path.resolve(import.meta.dirname, "tsconfig.install.json")} --outDir .`;
 await writeFile(path.resolve(tempPath, "package.json"), JSON.stringify(packageJson, null, 2));
 await writeFile(path.resolve(tempPath, "pnpm-workspace.yaml"), "");

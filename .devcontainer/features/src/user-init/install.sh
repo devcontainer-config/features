@@ -13,9 +13,10 @@ rm --force "/etc/sudoers.d/${OLD_USER}"
 echo "${_REMOTE_USER} ALL=(root) NOPASSWD:ALL" > "/etc/sudoers.d/${_REMOTE_USER}"
 chmod ug=r,o= "/etc/sudoers.d/${_REMOTE_USER}"
 
-XDG_CONFIG_HOME=${HOME}/.config
-XDG_CACHE_HOME=${HOME}/.cache
-XDG_DATA_HOME=${HOME}/.local/share
-XDG_STATE_HOME=${HOME}/.local/state
+XDG_CONFIG_HOME=/etc/devcontainer-config
+XDG_CACHE_HOME=/var/cache/devcontainer-config
+XDG_DATA_HOME=/usr/share/devcontainer-config
+XDG_STATE_HOME=/var/lib/devcontainer-config
 mkdir --parents "${XDG_CONFIG_HOME}" "${XDG_CACHE_HOME}" "${XDG_DATA_HOME}" "${XDG_STATE_HOME}"
+chmod -R a+rwx "${XDG_CONFIG_HOME}" "${XDG_CACHE_HOME}" "${XDG_DATA_HOME}" "${XDG_STATE_HOME}"
 chown --recursive "${_REMOTE_USER}:${_REMOTE_USER}" "${HOME}"

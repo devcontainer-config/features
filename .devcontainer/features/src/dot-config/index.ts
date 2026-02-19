@@ -7,7 +7,7 @@ import { packageJson } from "./package.js";
 import { sync } from "./sync.js";
 import { watch } from "./watch.js";
 
-await initializeLogger();
+initializeLogger();
 const projectRoot = process.cwd();
 
 program.name(packageJson.name).version(packageJson.version);

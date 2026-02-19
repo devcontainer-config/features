@@ -1,16 +1,22 @@
 {
   "id": "user-init",
-  "version": "2.1.0",
+  "version": "3.0.0-alpha1",
   "name": "Initialize User",
   "description": "Rename user with UID 1000 to remoteUser and setup XDG base directories.",
   "keywords": ["initialize", "user", "username", "uid", "common-utils"],
   "installsAfter": ["ghcr.io/devcontainers/features/common-utils"],
   "containerEnv": {
-    "XDG_CONFIG_HOME": "${HOME}/.config",
-    "XDG_CACHE_HOME": "${HOME}/.cache",
-    "XDG_DATA_HOME": "${HOME}/.local/share",
-    "XDG_STATE_HOME": "${HOME}/.local/state",
+    "XDG_CONFIG_HOME": "/etc/devcontainer-config",
+    "XDG_CACHE_HOME": "/var/cache/devcontainer-config",
+    "XDG_DATA_HOME": "/usr/share/devcontainer-config",
+    "XDG_STATE_HOME": "/var/lib/devcontainer-config",
     "XDG_DATA_DIRS": "/usr/local/share:/usr/share",
     "XDG_CONFIG_DIRS": "/etc/xdg"
-  }
+  },
+  "mounts": [
+    { "type": "volume", "source": "XDG_CONFIG_HOME-${devcontainerId}", "target": "/etc/devcontainer-config" },
+    { "type": "volume", "source": "XDG_CACHE_HOME-${devcontainerId}", "target": "/var/cache/devcontainer-config" },
+    { "type": "volume", "source": "XDG_DATA_HOME-${devcontainerId}", "target": "/usr/share/devcontainer-config" },
+    { "type": "volume", "source": "XDG_STATE_HOME-${devcontainerId}", "target": "/var/lib/devcontainer-config" }
+  ]
 }

@@ -8,11 +8,9 @@ test("uid", () => {
 });
 
 test("XDG base directories", async () => {
-  const userName = process.env.USER;
-  expect(userName).toBeDefined();
-
-  await access(`/home/${userName}/.config`, R_OK | W_OK | X_OK);
-  await access(`/home/${userName}/.cache`, R_OK | W_OK | X_OK);
-  await access(`/home/${userName}/.local/share`, R_OK | W_OK | X_OK);
-  await access(`/home/${userName}/.local/state`, R_OK | W_OK | X_OK);
+  await access("/etc/devcontainer-config", R_OK | W_OK | X_OK);
+  await access("/var/cache/devcontainer-config", R_OK | W_OK | X_OK);
+  await access("/usr/share/devcontainer-config", R_OK | W_OK | X_OK);
+  await access("/var/lib/devcontainer-config", R_OK | W_OK | X_OK);
+  expect(true).toBe(true);
 });
