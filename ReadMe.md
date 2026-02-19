@@ -24,8 +24,6 @@ Example usage:
 
 - [devcontainer.json](.devcontainer/devcontainer.json)
 
-- [.env](.devcontainer/.env)
-
 - [compose.yaml](.devcontainer/compose.yaml)
 
 ## [dot-config](.devcontainer/features/src/dot-config/README.md)
