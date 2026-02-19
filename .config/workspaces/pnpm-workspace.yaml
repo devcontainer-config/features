@@ -1,5 +1,4 @@
 packages:
-  - "."
   - "features/.devcontainer/features/src/*"
   - "features/.devcontainer/features/test/*"
 overrides:

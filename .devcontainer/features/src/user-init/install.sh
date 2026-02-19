@@ -13,6 +13,8 @@ rm --force "/etc/sudoers.d/${OLD_USER}"
 echo "${_REMOTE_USER} ALL=(root) NOPASSWD:ALL" > "/etc/sudoers.d/${_REMOTE_USER}"
 chmod ug=r,o= "/etc/sudoers.d/${_REMOTE_USER}"
 
+# Ideally these folders would be in ${HOME}, but there's no way to mount volumes base on remoteUser.
+# See https://github.com/devcontainers/spec/issues/220
 XDG_CONFIG_HOME=/etc/devcontainer-config
 XDG_CACHE_HOME=/var/cache/devcontainer-config
 XDG_DATA_HOME=/usr/share/devcontainer-config
