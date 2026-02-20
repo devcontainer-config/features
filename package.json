@@ -5,6 +5,7 @@
     "build": "vite-node scripts/build.ts",
     "fix": "vite-node scripts/fix.ts",
     "lint": "vite-node scripts/lint.ts",
+    "pack": "vite-node scripts/pack.ts",
     "publish": "vite-node scripts/publish.ts",
     "push": "vite-node scripts/push.ts",
     "pushTags": "vite-node scripts/pushTags.ts",

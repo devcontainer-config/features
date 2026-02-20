@@ -3,6 +3,7 @@
   "name": "devcontainer-config-features",
   "dockerComposeFile": "compose.yaml",
   "service": "devcontainer",
+  "containerUser": "dev",
   "remoteUser": "dev",
   "overrideCommand": true,
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",

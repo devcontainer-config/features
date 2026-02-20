@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "install-feature": "vite-node install.ts"
+    "install-feature": "vite-node index.ts install"
   },
   "dependencies": {
     "@commander-js/extra-typings": "^14.0.0",
