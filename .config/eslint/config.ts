@@ -17,7 +17,7 @@ export default defineConfig(
   {
     files: ["**/*.{ts,tsx,cts,mts}"],
     extends: [...tsESLint.configs.recommendedTypeChecked, ...tsESLint.configs.stylisticTypeChecked],
-    languageOptions: { parserOptions: { project: true, tsConfigRootDir: import.meta.dirname } },
+    languageOptions: { parserOptions: { projectService: true } },
     rules: {
       "@typescript-eslint/consistent-type-exports": "error",
       "@typescript-eslint/consistent-type-imports": "error",

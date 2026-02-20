@@ -1,6 +1,6 @@
 {
   "id": "dot-config",
-  "version": "3.3.0",
+  "version": "4.0.0-alpha1",
   "name": ".config/",
   "description": "Synchronize configuration files from .config/ to devcontainer workspaces.",
   "keywords": ["dot", "config"],
@@ -12,6 +12,13 @@
     }
   },
   "installsAfter": ["ghcr.io/devcontainers/features/node"],
-  "onCreateCommand": "dot-config sync",
-  "postStartCommand": "dot-config watch --detach"
+  "onCreateCommand": "dot-config sync || true",
+  "postStartCommand": "dot-config watch --detach",
+  "mounts": [
+    {
+      "type": "volume",
+      "source": "dot-config-cache-${devcontainerId}",
+      "target": "/var/cache/devcontainer-config/dot-config"
+    }
+  ]
 }

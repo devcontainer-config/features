@@ -3,9 +3,22 @@
   "name": "devcontainer-config-features",
   "dockerComposeFile": "compose.yaml",
   "service": "devcontainer",
+  "containerUser": "dev",
   "remoteUser": "dev",
   "overrideCommand": true,
-  "workspaceFolder": "/workspaces/devcontainer-config-features",
+  "workspaceFolder": "/workspaces/features",
+  "mounts": [
+    {
+      "type": "bind",
+      "source": "${localWorkspaceFolder}",
+      "target": "/workspaces/features"
+    },
+    {
+      "type": "volume",
+      "source": "WORKSPACES",
+      "target": "/workspaces"
+    }
+  ],
   "features": {
     // "ghcr.io/devcontainer-config/features/user-init:2": {},
     // "ghcr.io/devcontainer-config/features/dot-config:3": {},

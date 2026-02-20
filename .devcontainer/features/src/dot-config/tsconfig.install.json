@@ -1,9 +1,0 @@
-{
-  "extends": "@tsconfig/node24/tsconfig.json",
-  "compilerOptions": {
-    "resolveJsonModule": true,
-    "module": "Node18",
-    "typeRoots": ["node_modules/@types"]
-  },
-  "exclude": ["install.ts"]
-}

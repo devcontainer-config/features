@@ -1,3 +1,7 @@
 packages:
-  - "devcontainer-config-features/.devcontainer/features/src/*"
-  - "devcontainer-config-features/.devcontainer/features/test/*"
+  - "features/.devcontainer/features/src/*"
+  - "features/.devcontainer/features/test/*"
+overrides:
+  "@eslint/js": "^9.39.2"
+  "eslint": "^9.39.1"
+  "parse-url": "^10.0.3"

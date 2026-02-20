@@ -2,12 +2,13 @@ import { program } from "@commander-js/extra-typings";
 import { $ } from "execa";
 import winston from "winston";
 
+import { install } from "./install.js";
 import { initializeLogger } from "./logging.js";
 import { packageJson } from "./package.js";
 import { sync } from "./sync.js";
 import { watch } from "./watch.js";
 
-await initializeLogger();
+initializeLogger();
 const projectRoot = process.cwd();
 
 program.name(packageJson.name).version(packageJson.version);
@@ -34,6 +35,13 @@ program
     } else {
       watch(projectRoot);
     }
+  });
+
+program
+  .command("install")
+  .description("install the current version of this package globally")
+  .action(async () => {
+    await install();
   });
 
 await program.parseAsync();

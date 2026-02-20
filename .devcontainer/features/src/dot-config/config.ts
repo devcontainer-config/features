@@ -33,3 +33,5 @@ export const parseConfig = async (projectRoot: string) => {
   }
   return mappings;
 };
+
+export const cachePath = "/var/cache/devcontainer-config/dot-config";
