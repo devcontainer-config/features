@@ -6,12 +6,12 @@
   "containerUser": "dev",
   "remoteUser": "dev",
   "overrideCommand": true,
-  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "workspaceFolder": "/workspaces/features",
   "mounts": [
     {
       "type": "bind",
       "source": "${localWorkspaceFolder}",
-      "target": "/workspaces/${localWorkspaceFolderBasename}"
+      "target": "/workspaces/features"
     },
     {
       "type": "volume",
