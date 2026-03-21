@@ -20,8 +20,8 @@
     }
   ],
   "features": {
-    // "ghcr.io/devcontainer-config/features/user-init:2": {},
-    // "ghcr.io/devcontainer-config/features/dot-config:3": {},
+    // "ghcr.io/devcontainer-config/features/user-init:3": {},
+    // "ghcr.io/devcontainer-config/features/dot-config:4": {},
     "./features/src/user-init": {},
     "./features/src/dot-config": {},
     "./features/src/unset-git-credential-helper": {},
@@ -51,9 +51,9 @@
         },
         "eslint.runtime": "/usr/local/bin/node",
         "eslint.workingDirectories": ["/workspaces"],
-        "typescript.preferences.importModuleSpecifier": "non-relative",
-        "typescript.preferences.includePackageJsonAutoImports": "on",
-        "typescript.tsdk": "/workspaces/node_modules/typescript/lib"
+        "js/ts.preferences.importModuleSpecifier": "non-relative",
+        "js/ts.preferences.includePackageJsonAutoImports": "on",
+        "js/ts.tsdk.path": "/workspaces/node_modules/typescript/lib"
       }
     }
   },
