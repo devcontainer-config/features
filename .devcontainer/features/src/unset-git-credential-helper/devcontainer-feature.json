@@ -1,6 +1,6 @@
 {
   "id": "unset-git-credential-helper",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "name": "Unset Git Credential Helper",
   "description": "Unset Git credential helper from Devcontainer extension.",
   "keywords": ["git", "credential", "helper", "unset"],
