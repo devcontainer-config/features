@@ -34,7 +34,7 @@ export const pack = async () => {
     await cp(path.resolve(dotConfigSourcePath, sourceFile), path.resolve(dotConfigTargetPath, targetFile));
   }
   await using runner = await createDevContainerRunner();
-  await runner.start();
+  await runner.start({ skipPostCreate: true });
   await runner.exec("mkdir", "--parents", path.resolve(projectRoot, "artifacts"));
   await runner.exec(
     "cp",

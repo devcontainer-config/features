@@ -1,7 +1,14 @@
 packages:
   - "features/.devcontainer/features/src/*"
   - "features/.devcontainer/features/test/*"
+lockfile: false
+confirmModulesPurge: false
+update:
+  ignoreDeps:
+    - typescript
+    - "@types/node"
 overrides:
-  "@eslint/js": "^9.39.2"
-  "eslint": "^9.39.1"
-  "parse-url": "^10.0.3"
+  "parse-url": "^11.1.0"
+allowBuilds:
+  esbuild: false
+  unrs-resolver: false

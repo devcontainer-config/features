@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { readBlob } from "isomorphic-git";
 import git from "isomorphic-git";
+import { readBlob } from "isomorphic-git";
 import http from "isomorphic-git/http/node";
 
 import { projectRoot } from "@/scripts/project.js";

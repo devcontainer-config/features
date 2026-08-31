@@ -39,8 +39,7 @@
       "settings": {
         "files.associations": {
           "ignore": "ignore",
-          "attributes": "properties",
-          "rc": "properties"
+          "attributes": "properties"
         },
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "esbenp.prettier-vscode",

@@ -7,7 +7,7 @@
     "cspell.json": "cspell.json"
   },
   "pnpm": {
-    "rc": "/etc/devcontainer-config/pnpm/rc"
+    "config.yaml": "/etc/devcontainer-config/pnpm/config.yaml"
   },
   "eslint": {
     "config.ts": "eslint.config.ts"

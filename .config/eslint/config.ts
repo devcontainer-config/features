@@ -3,7 +3,7 @@ import vitest from "@vitest/eslint-plugin";
 import { defineConfig } from "eslint/config";
 import prettier from "eslint-config-prettier";
 import { gitignore } from "eslint-flat-config-gitignore";
-import importPlugin from "eslint-plugin-import";
+import importX from "eslint-plugin-import-x";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import eslintPluginUnicorn from "eslint-plugin-unicorn";
 import tsESLint from "typescript-eslint";
@@ -32,10 +32,10 @@ export default defineConfig(
     plugins: {
       "simple-import-sort": simpleImportSort,
       unicorn: eslintPluginUnicorn,
-      import: importPlugin,
+      "import-x": importX,
     },
     rules: {
-      "import/no-extraneous-dependencies": "error",
+      "import-x/no-extraneous-dependencies": "error",
       "simple-import-sort/exports": "error",
       "simple-import-sort/imports": "error",
       "unicorn/prefer-node-protocol": "error",

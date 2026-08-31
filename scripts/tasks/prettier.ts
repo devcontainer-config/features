@@ -1,6 +1,10 @@
-import { projectRoot } from "@/scripts/project.js";
+import path from "node:path";
+
+import { projectRoot, workspaces } from "@/scripts/project.js";
 import { $$ } from "@/scripts/shell.js";
 
-export const prettierCheck = () => $$`prettier --check ${projectRoot}`;
+const gitignorePath = path.resolve(workspaces, ".gitignore");
 
-export const prettierFix = () => $$`prettier --write ${projectRoot}`;
+export const prettierCheck = () => $$`prettier --check --ignore-path ${gitignorePath} ${projectRoot}`;
+
+export const prettierFix = () => $$`prettier --write --ignore-path ${gitignorePath} ${projectRoot}`;

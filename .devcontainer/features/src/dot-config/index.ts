@@ -31,7 +31,7 @@ program
   .action(({ detach }) => {
     if (detach) {
       const childProcess = $({ detached: true, stdio: "ignore" })`${packageJson.name} watch`;
-      childProcess.unref();
+      childProcess.nodeChildProcess.unref();
     } else {
       watch(projectRoot);
     }
