@@ -3,23 +3,23 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "install-feature": "vite-node index.ts install"
+    "install-feature": "tsx index.ts install"
   },
   "dependencies": {
-    "@commander-js/extra-typings": "^14.0.0",
+    "@commander-js/extra-typings": "^15.0.0",
     "chokidar": "^5.0.0",
-    "commander": "~14.0.3",
-    "execa": "^9.6.1",
+    "commander": "~15.0.0",
+    "execa": "^10.0.1",
     "winston": "^3.19.0",
-    "write-file-atomic": "^7.0.1",
-    "zod": "^4.3.6"
+    "write-file-atomic": "^8.0.0",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
-    "@tsconfig/node24": "^24.0.4",
-    "@types/node": "^25.5.0",
+    "@tsconfig/node24": "^24.0.5",
+    "@types/node": "^26.4.0",
     "@types/write-file-atomic": "^4.0.3",
-    "typescript": "^5.9.3",
-    "vite-node": "^6.0.0"
+    "tsx": "^4.23.13",
+    "typescript": "^6.0.3"
   },
   "engines": {
     "node": ">=22"
