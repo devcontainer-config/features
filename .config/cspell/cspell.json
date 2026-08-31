@@ -4,5 +4,5 @@
   "useGitignore": true,
   "gitignoreRoot": ".",
   "ignorePaths": ["**/node_modules/**", "LICENSE"],
-  "words": ["devcontainer", "devcontainers", "execa", "hasha", "packagejson", "syncpack"]
+  "words": ["devcontainer", "devcontainers", "execa", "hasha", "packagejson", "syncpack", "esbuild", "unrs"]
 }

@@ -1,5 +1,16 @@
 packages:
   - "features/.devcontainer/features/src/*"
   - "features/.devcontainer/features/test/*"
+lockfile: false
+confirmModulesPurge: false
+update:
+  ignoreDeps:
+    - typescript
+    - "@types/node"
 overrides:
   "parse-url": "^11.1.0"
+minimumReleaseAgeExclude:
+  - "@devcontainers/cli@0.89.0"
+allowBuilds:
+  esbuild: false
+  unrs-resolver: false

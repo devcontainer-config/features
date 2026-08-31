@@ -53,7 +53,7 @@ export const install = async () => {
     await insertShebang(path.resolve(tempPath, "index.js"));
     await $$`pnpm install`;
     await $$`pnpm deploy --filter=dot-config --prod ${featureInstallPath}`;
-    await $$`pnpm install --global ${featureInstallPath}`;
+    await $$`npm install --global ${featureInstallPath}`;
     await $$`rm --recursive ${tempPath}`;
   }
 };

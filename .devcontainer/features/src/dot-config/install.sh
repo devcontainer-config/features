@@ -1,8 +1,9 @@
 #!/bin/sh
 set -e
 
-export npm_config_resolution_mode=time-based
-export npm_config_inject_workspace_packages=true
-export npm_config_global_bin_dir=/usr/local/bin
+export pnpm_config_resolution_mode=time-based
+export pnpm_config_inject_workspace_packages=true
+export pnpm_config_lockfile=false
+export pnpm_config_strict_dep_builds=false
 pnpm install
 pnpm run install-feature
