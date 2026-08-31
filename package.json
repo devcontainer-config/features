@@ -14,7 +14,7 @@
     "update": "tsx scripts/update.ts"
   },
   "dependencies": {
-    "@devcontainers/cli": "^0.88.0",
+    "@devcontainers/cli": "^0.89.0",
     "@eslint/js": "^10.0.1",
     "@tsconfig/node24": "^24.0.5",
     "@typescript-eslint/utils": "^8.68.0",
@@ -42,7 +42,7 @@
     "vitest": "^4.1.11"
   },
   "devDependencies": {
-    "@types/node": "^26.4.0"
+    "@types/node": "^24.13.3"
   },
   "engines": {
     "node": ">=24"
@@ -50,7 +50,8 @@
   "pnpm": {
     "updateConfig": {
       "ignoreDependencies": [
-        "typescript"
+        "typescript",
+        "@types/node"
       ]
     }
   }
