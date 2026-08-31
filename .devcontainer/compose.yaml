@@ -7,3 +7,8 @@ services:
       context: .
       dockerfile: Dockerfile
     init: true
+    volumes:
+      - WORKSPACES:/workspaces
+      - ..:/workspaces/features
+volumes:
+  WORKSPACES:
