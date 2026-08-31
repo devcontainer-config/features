@@ -9,8 +9,6 @@ update:
     - "@types/node"
 overrides:
   "parse-url": "^11.1.0"
-minimumReleaseAgeExclude:
-  - "@devcontainers/cli@0.89.0"
 allowBuilds:
   esbuild: false
   unrs-resolver: false
