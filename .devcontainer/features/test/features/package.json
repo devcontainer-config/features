@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@tsconfig/node24": "^24.0.5",
+    "execa": "^10.0.1",
+    "vitest": "^4.1.11"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3"
+  }
+}

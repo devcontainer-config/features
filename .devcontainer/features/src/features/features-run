@@ -1,0 +1,169 @@
+#!/bin/sh
+# features-run - install and setup image-based features.
+#
+# Usage: features-run <install|entrypoint|onCreate|updateContent|postCreate|postStart|postAttach>
+#
+# A feature is a directory under the features path (default
+# /opt/devcontainer-config/features) that contains an executable `install` and,
+# optionally, an `installsAfter` declaration file plus executables named after
+# the other lifecycle hooks and `entrypoint`. The convention is documented in
+# the `features` Feature's NOTES.md.
+
+set -u
+
+prefix=/opt/devcontainer-config
+default_features_path=/opt/devcontainer-config/features
+
+die() {
+  echo "features-run: $*" >&2
+  exit 1
+}
+
+note() {
+  echo "features-run: $*" >&2
+}
+
+# read_declaration <file>: print the ids declared in <file>, one per line.
+# Blank lines and lines whose first non-blank character is '#' are ignored, as
+# is surrounding whitespace. A missing file declares nothing.
+read_declaration() {
+  file=$1
+  [ -f "$file" ] || return 0
+  while IFS= read -r line || [ -n "$line" ]; do
+    line=${line#"${line%%[![:space:]]*}"}
+    line=${line%"${line##*[![:space:]]}"}
+    case $line in
+      '' | '#'*) continue ;;
+    esac
+    printf '%s\n' "$line"
+  done < "$file"
+}
+
+# --- resolve the requested hook ---
+
+hook=${1:-}
+valid=false
+for candidate in install entrypoint onCreate updateContent postCreate postStart postAttach; do
+  if [ "$candidate" = "$hook" ]; then
+    valid=true
+    break
+  fi
+done
+if [ "$valid" != true ]; then
+  note "unknown or missing hook '$hook'"
+  echo "Usage: features-run <install|entrypoint|onCreate|updateContent|postCreate|postStart|postAttach>" >&2
+  exit 1
+fi
+
+# --- resolve the features path (persisted by install.sh at build time) ---
+
+features_path=
+if [ -f "$prefix/features-path" ]; then
+  features_path=$(cat "$prefix/features-path")
+fi
+features_path=${features_path:-$default_features_path}
+
+if [ ! -d "$features_path" ]; then
+  die "features path does not exist: $features_path"
+fi
+
+work=$(mktemp -d) || die "cannot create a temporary directory"
+trap 'rm -rf "$work"' EXIT
+
+# --- discover features ---
+
+found=$work/found
+: > "$found"
+for entry in "$features_path"/*; do
+  if [ ! -d "$entry" ]; then
+    continue
+  fi
+  id=${entry##*/}
+  if [ ! -f "$entry/install" ]; then
+    die "feature '$id' has no install executable: $entry/install"
+  fi
+  printf '%s\n' "$id" >> "$found"
+done
+pending=$work/pending
+LC_ALL=C sort "$found" > "$pending"
+
+# --- resolve installsAfter declarations, dropping dangling entries ---
+
+while IFS= read -r id; do
+  [ -n "$id" ] || continue
+  : > "$work/deps-$id"
+  declared=$(read_declaration "$features_path/$id/installsAfter" | LC_ALL=C sort -u)
+  if [ -z "$declared" ]; then
+    continue
+  fi
+  printf '%s\n' "$declared" | LC_ALL=C comm -12 - "$pending" > "$work/deps-$id"
+  printf '%s\n' "$declared" | LC_ALL=C comm -23 - "$pending" | while IFS= read -r dangling; do
+    note "ignoring installsAfter entry '$dangling' of feature '$id': no such feature under $features_path"
+  done
+done < "$pending"
+
+# --- resolve the execution order: a feature runs in the first round where
+# every id it declares was already run in an earlier round; a round without a
+# ready feature means a circular dependency ---
+
+order=$work/order
+: > "$order"
+while [ -s "$pending" ]; do
+  round=$work/round
+  : > "$round"
+  while IFS= read -r id; do
+    [ -n "$id" ] || continue
+    if [ -s "$work/deps-$id" ] && [ -n "$(LC_ALL=C comm -12 "$pending" "$work/deps-$id")" ]; then
+      continue
+    fi
+    printf '%s\n' "$id" >> "$round"
+  done < "$pending"
+
+  if [ ! -s "$round" ]; then
+    die "circular installsAfter dependency between features: $(paste -sd ' ' - < "$pending")"
+  fi
+
+  cat "$round" >> "$order"
+  LC_ALL=C comm -23 "$pending" "$round" > "$pending.next"
+  mv "$pending.next" "$pending"
+done
+
+# --- run the hook for every feature, in the resolved order ---
+
+failed=
+while IFS= read -r id; do
+  [ -n "$id" ] || continue
+  dir=$features_path/$id
+  exe=$dir/$hook
+  if [ ! -f "$exe" ]; then
+    continue
+  fi
+
+  printf '>>> features: %s (%s)\n' "$id" "$hook"
+
+  FEATURES_PATH=$features_path
+  FEATURES_ID=$id
+  FEATURES_DIR=$dir
+  export FEATURES_PATH FEATURES_ID FEATURES_DIR
+
+  if [ "$hook" = install ]; then
+    (cd "$dir" && exec "$exe")
+  else
+    "$exe"
+  fi
+  rc=$?
+  if [ "$rc" -eq 0 ]; then
+    continue
+  fi
+  if [ "$hook" = entrypoint ]; then
+    failed=$rc
+    note "feature '$id' entrypoint failed with exit code $rc; continuing"
+  else
+    echo "features-run: feature '$id' $hook failed with exit code $rc" >&2
+    exit "$rc"
+  fi
+done < "$order"
+
+if [ -n "$failed" ]; then
+  exit "$failed"
+fi

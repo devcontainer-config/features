@@ -1,0 +1,2 @@
+. "$FEATURES_PATH/.shared/log.sh"
+log_install "install $FEATURES_ID path=$FEATURES_PATH"

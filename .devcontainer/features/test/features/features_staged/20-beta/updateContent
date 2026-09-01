@@ -1,0 +1,4 @@
+#!/bin/sh
+. "$FEATURES_PATH/.shared/log.sh"
+log_hook "updateContent $FEATURES_ID path=$FEATURES_PATH"
+log_state updateContent
