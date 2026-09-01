@@ -1,0 +1,3 @@
+#!/bin/sh
+. "$FEATURES_PATH/.shared/log.sh"
+log_entrypoint "entrypoint $FEATURES_ID path=$FEATURES_PATH"

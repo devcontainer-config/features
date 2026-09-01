@@ -1,0 +1,4 @@
+#!/bin/sh
+. "$FEATURES_PATH/.shared/log.sh"
+log_hook "postStart $FEATURES_ID path=$FEATURES_PATH"
+log_state postStart

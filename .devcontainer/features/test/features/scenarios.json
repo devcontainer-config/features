@@ -1,0 +1,20 @@
+{
+  "features_staged": {
+    "build": {
+      "dockerfile": "Dockerfile"
+    },
+    "features": {
+      "features": {}
+    }
+  },
+  "features_custom_path": {
+    "build": {
+      "dockerfile": "Dockerfile"
+    },
+    "features": {
+      "features": {
+        "featuresPath": "/opt/custom-features"
+      }
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "id": "features",
+  "version": "0.1.0",
+  "name": "Features",
+  "description": "Install and setup image-based features.",
+  "keywords": ["devcontainer", "features"],
+  "installsAfter": ["ghcr.io/devcontainers/features/common-utils"],
+  "options": {
+    "featuresPath": {
+      "type": "string",
+      "description": "Parent directory of image-based features (the Dockerfile COPY target).",
+      "default": "/opt/devcontainer-config/features"
+    }
+  },
+  "init": true,
+  "mounts": [
+    {
+      "type": "volume",
+      "source": "features-var-lib-${devcontainerId}",
+      "target": "/var/lib/devcontainer-config/features"
+    }
+  ],
+  "entrypoint": "/opt/devcontainer-config/features-run entrypoint",
+  "onCreateCommand": "/opt/devcontainer-config/features-run onCreate",
+  "updateContentCommand": "/opt/devcontainer-config/features-run updateContent",
+  "postCreateCommand": "/opt/devcontainer-config/features-run postCreate",
+  "postStartCommand": "/opt/devcontainer-config/features-run postStart",
+  "postAttachCommand": "/opt/devcontainer-config/features-run postAttach"
+}
