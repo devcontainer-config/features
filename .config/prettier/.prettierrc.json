@@ -1,4 +1,6 @@
 {
   "printWidth": 120,
-  "plugins": ["prettier-plugin-packagejson", "prettier-plugin-sh"]
+  "plugins": ["prettier-plugin-packagejson", "prettier-plugin-sh", "@prettier/plugin-xml", "prettier-plugin-ini"],
+  "xmlWhitespaceSensitivity": "ignore",
+  "overrides": [{ "files": "*.globalconfig", "options": { "parser": "ini" } }]
 }
