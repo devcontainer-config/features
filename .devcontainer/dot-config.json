@@ -15,10 +15,18 @@
   "prettier": {
     ".prettierrc.json": ".prettierrc.json"
   },
+  "csharpier": {
+    ".csharpierrc.json": ".csharpierrc.json",
+    ".csharpierignore": ".csharpierignore"
+  },
+  "dotnet": {
+    "tools.json": ".config/dotnet-tools.json"
+  },
   "workspaces": {
     "../git/attributes": ".gitattributes",
     "../git/ignore": ".gitignore",
     "../../package.json": "package.json",
-    "pnpm-workspace.yaml": "pnpm-workspace.yaml"
+    "pnpm-workspace.yaml": "pnpm-workspace.yaml",
+    "Directory.Build.props": "Directory.Build.props"
   }
 }

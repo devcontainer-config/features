@@ -1,4 +1,4 @@
-// spell-checker:ignore esbenp azuretools dbaeumer
+// spell-checker:ignore esbenp azuretools dbaeumer dotnettools
 {
   "name": "devcontainer-config-features",
   "dockerComposeFile": "compose.yaml",
@@ -25,7 +25,8 @@
     "./features/src/user-init": {},
     "./features/src/dot-config": {},
     "./features/src/unset-git-credential-helper": {},
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/dotnet:2": { "version": "10.0" }
   },
   "customizations": {
     "vscode": {
@@ -34,12 +35,15 @@
         "ms-azuretools.vscode-docker",
         "streetsidesoftware.code-spell-checker",
         "dbaeumer.vscode-eslint",
+        "ms-dotnettools.csharp",
+        "csharpier.csharpier-vscode",
         "vitest.explorer"
       ],
       "settings": {
         "files.associations": {
           "ignore": "ignore",
-          "attributes": "properties"
+          "attributes": "properties",
+          "*.globalconfig": "ini"
         },
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "esbenp.prettier-vscode",
@@ -52,7 +56,10 @@
         "eslint.workingDirectories": ["/workspaces"],
         "js/ts.preferences.importModuleSpecifier": "non-relative",
         "js/ts.preferences.includePackageJsonAutoImports": "on",
-        "js/ts.tsdk.path": "/workspaces/node_modules/typescript/lib"
+        "js/ts.tsdk.path": "/workspaces/node_modules/typescript/lib",
+        "[csharp]": {
+          "editor.defaultFormatter": "csharpier.csharpier-vscode"
+        }
       }
     }
   },

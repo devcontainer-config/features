@@ -5,13 +5,17 @@
   "gitignoreRoot": ".",
   "ignorePaths": ["**/node_modules/**", "LICENSE"],
   "words": [
+    "csharpierignore",
+    "csharpierrc",
     "devcontainer",
     "devcontainers",
     "esac",
     "esbuild",
     "execa",
+    "globalconfig",
     "hasha",
     "mktemp",
+    "msbuild",
     "packagejson",
     "syncpack",
     "unrs"
