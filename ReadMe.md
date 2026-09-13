@@ -1,9 +1,9 @@
 # Devcontainer Features for Devcontainer Configurations
 
-[AppVeyor Badge]: https://img.shields.io/appveyor/build/gdlol/devcontainer-config-features/main
-[AppVeyor URL]: https://ci.appveyor.com/project/gdlol/devcontainer-config-features/branch/main
+[CI Badge]: https://img.shields.io/github/actions/workflow/status/devcontainer-config/features/.github%2Fworkflows%2Fmain.yml
+[CI URL]: https://github.com/devcontainer-config/features/actions/workflows/main.yml
 
-[![AppVeyor Badge][AppVeyor Badge]][AppVeyor URL]
+[![CI Badge][CI Badge]][CI URL]
 
 A set of devcontainer features for better developer experience setting up devcontainers.
 

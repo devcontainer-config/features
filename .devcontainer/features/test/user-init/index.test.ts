@@ -1,16 +1,29 @@
 import { R_OK, W_OK, X_OK } from "node:constants";
-import { access } from "node:fs/promises";
+import { access, stat } from "node:fs/promises";
+import { userInfo } from "node:os";
 
 import { expect, test } from "vitest";
 
-test("uid", () => {
-  expect(process.getuid?.()).toBe(1000);
+test("remote user home", async () => {
+  const { username, uid, gid, homedir } = userInfo();
+
+  expect(homedir).toBe(`/home/${username}`);
+
+  const home = await stat(homedir);
+  expect(home.uid).toBe(uid);
+  expect(home.gid).toBe(gid);
 });
 
 test("XDG base directories", async () => {
-  await access("/etc/devcontainer-config", R_OK | W_OK | X_OK);
-  await access("/var/cache/devcontainer-config", R_OK | W_OK | X_OK);
-  await access("/usr/share/devcontainer-config", R_OK | W_OK | X_OK);
-  await access("/var/lib/devcontainer-config", R_OK | W_OK | X_OK);
-  expect(true).toBe(true);
+  const dirs = {
+    XDG_CONFIG_HOME: "/etc/devcontainer-config",
+    XDG_CACHE_HOME: "/var/cache/devcontainer-config",
+    XDG_DATA_HOME: "/usr/share/devcontainer-config",
+    XDG_STATE_HOME: "/var/lib/devcontainer-config",
+  } as const;
+
+  for (const [name, dir] of Object.entries(dirs)) {
+    expect(process.env[name]).toBe(dir);
+    await access(dir, R_OK | W_OK | X_OK);
+  }
 });

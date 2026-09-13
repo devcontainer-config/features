@@ -30,8 +30,8 @@ export const createDevContainerRunner = async (env: Record<string, string> = {})
   return {
     workspaceFolder: workspacePath,
     start: async ({ skipPostCreate = false } = {}) => {
-      await $$`devcontainer build`;
-      await $$`devcontainer up --remove-existing-container ${skipPostCreate ? ["--skip-post-create"] : []} ${remoteEnv}`;
+      await $$`devcontainer build --no-lockfile`;
+      await $$`devcontainer up --no-lockfile --remove-existing-container ${skipPostCreate ? ["--skip-post-create"] : []} ${remoteEnv}`;
     },
     exec: async (command: string, ...args: string[]): Promise<void> => {
       await $$`devcontainer exec ${remoteEnv} ${command} ${args}`;
@@ -44,7 +44,7 @@ export const createDevContainerRunner = async (env: Record<string, string> = {})
         reject: false,
         stdio: "ignore",
         env: { COMPOSE_PROJECT_NAME: composeProject },
-      })`devcontainer up --remove-existing-container`;
+      })`devcontainer up --no-lockfile --remove-existing-container`;
 
       await removeComposeProject(composeProject);
 
