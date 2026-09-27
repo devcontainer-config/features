@@ -1,6 +1,7 @@
 packages:
   - "features/.devcontainer/features/src/*"
   - "features/.devcontainer/features/test/*"
+  - "features"
 lockfile: false
 confirmModulesPurge: false
 update:
