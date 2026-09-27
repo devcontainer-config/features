@@ -35,7 +35,7 @@ const channelSchema = z.object({
   "latest-runtime": z.string(),
   "latest-sdk": z.string(),
   "release-type": z.string(),
-  "support-phase": z.enum(["active", "preview", "maintenance", "eol"]),
+  "support-phase": z.enum(["preview", "go-live", "active", "maintenance", "eol"]),
   "releases.json": z.string(),
 });
 
@@ -166,7 +166,7 @@ const resolveVersions = (
     }
     const major = majorVersion(channel);
     let aliases: string[];
-    if (channel["support-phase"] === "preview") {
+    if (channel["support-phase"] === "preview" || channel["support-phase"] === "go-live") {
       aliases = ["preview", `${major}-preview`, `${channel["channel-version"]}-preview`];
     } else {
       aliases = [channel["channel-version"], major];

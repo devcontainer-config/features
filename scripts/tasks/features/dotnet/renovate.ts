@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { parseArgs } from "node:util";
 
 import { Octokit } from "@octokit/rest";
 import git from "isomorphic-git";
@@ -34,6 +35,12 @@ const headConfig = async (oid: string): Promise<FeatureConfig> => {
 };
 
 const main = async (): Promise<void> => {
+  const { values } = parseArgs({
+    options: {
+      "dry-run": { type: "boolean", default: false },
+    },
+  });
+
   await generateConfig();
   const [row] = await git.statusMatrix({ fs, dir: projectRoot, filepaths: [configFilepath] });
   if (row === undefined) {
@@ -44,16 +51,23 @@ const main = async (): Promise<void> => {
     return;
   }
 
+  const headOid = await git.resolveRef({ fs, dir: projectRoot, ref: "HEAD" });
+  const body = versionPins(await headConfig(headOid), await readConfig()).join("\n");
+  if (values["dry-run"]) {
+    console.log(`Dry run: the regenerated ${configFilepath} differs from HEAD; the refresh commit would be:`);
+    console.log(`${title}\n\n${body}`);
+    console.log("Dry run: no branch update, no push, no pull request");
+    return;
+  }
+
   const token = process.env.GH_TOKEN;
   if (token === undefined || token === "") {
     throw new Error("GH_TOKEN environment variable is not set");
   }
-  const headOid = await git.resolveRef({ fs, dir: projectRoot, ref: "HEAD" });
   const branch = await git.currentBranch({ fs, dir: projectRoot, fullname: false });
   if (!branch) {
     throw new Error("Failed to determine the current branch");
   }
-  const body = versionPins(await headConfig(headOid), await readConfig()).join("\n");
 
   await git.branch({ fs, dir: projectRoot, ref: refreshBranch, object: headOid, force: true });
   await git.add({ fs, dir: projectRoot, filepath: configFilepath });
