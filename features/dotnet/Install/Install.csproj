@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
+    <AssemblyName>install</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>DevcontainerConfig.Dotnet.Install</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NuGet.Versioning" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <PublishAot>true</PublishAot>
+    <StaticExecutable>true</StaticExecutable>
+    <LinkerFlavor>lld</LinkerFlavor>
+  </PropertyGroup>
+</Project>

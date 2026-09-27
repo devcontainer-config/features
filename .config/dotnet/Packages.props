@@ -2,5 +2,9 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
-  <ItemGroup />
+
+  <ItemGroup>
+    <PackageVersion Include="NuGet.Versioning" Version="7.9.0" />
+    <PackageVersion Include="System.CommandLine" Version="2.0.11" />
+  </ItemGroup>
 </Project>

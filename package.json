@@ -11,11 +11,13 @@
     "pushTags": "tsx scripts/pushTags.ts",
     "restore": "tsx scripts/restore.ts",
     "test": "tsx scripts/test.ts",
-    "update": "tsx scripts/update.ts"
+    "update": "tsx scripts/update.ts",
+    "verify": "tsx scripts/verify.ts"
   },
   "dependencies": {
     "@devcontainers/cli": "^0.88.0",
     "@eslint/js": "^10.0.1",
+    "@octokit/rest": "^22.0.1",
     "@prettier/plugin-xml": "^3.4.2",
     "@tsconfig/node24": "^24.0.5",
     "@typescript-eslint/utils": "^8.68.0",
@@ -41,7 +43,8 @@
     "tsx": "^4.23.13",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.68.0",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@types/node": "^24.13.3"
