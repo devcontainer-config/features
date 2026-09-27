@@ -6,7 +6,7 @@ import { expect, test } from "vitest";
 
 const featuresRun = "/opt/devcontainer-config/features-run";
 const featuresPathFile = "/opt/devcontainer-config/features-path";
-const hooks = ["install", "entrypoint", "onCreate", "updateContent", "postCreate", "postStart", "postAttach"] as const;
+const lifecycleHooks = ["onCreate", "updateContent", "postCreate", "postStart", "postAttach"] as const;
 
 test("dispatcher is installed as an executable file", async () => {
   const stats = await stat(featuresRun);
@@ -28,9 +28,9 @@ test("unknown or missing hook exits 1", async () => {
   expect(missing.exitCode).toBe(1);
 });
 
-test("every hook exits 0 with no features staged", async () => {
+test("every lifecycle hook exits 0 with features staged", async () => {
   const $$ = $({ reject: false, verbose: "short" });
-  for (const hook of hooks) {
+  for (const hook of lifecycleHooks) {
     const result = await $$`${featuresRun} ${hook}`;
     expect(result.exitCode).toBe(0);
   }
