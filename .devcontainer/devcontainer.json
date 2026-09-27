@@ -22,11 +22,12 @@
   "features": {
     // "ghcr.io/devcontainer-config/features/user-init:3": {},
     // "ghcr.io/devcontainer-config/features/dot-config:4": {},
+    // "ghcr.io/devcontainer-config/features/features": {},
     "./features/src/user-init": {},
     "./features/src/dot-config": {},
+    "./features/src/features": {},
     "./features/src/unset-git-credential-helper": {},
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
-    "ghcr.io/devcontainers/features/dotnet:2": { "version": "10.0" }
+    "ghcr.io/devcontainers/features/docker-in-docker:4": {}
   },
   "customizations": {
     "vscode": {
