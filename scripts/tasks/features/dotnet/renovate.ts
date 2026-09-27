@@ -13,6 +13,7 @@ import type { Component, FeatureConfig } from "./generateConfig.js";
 import { components, configPath, generateConfig, parseConfig, readConfig } from "./generateConfig.js";
 
 const refreshBranch = "renovate";
+const refreshRef = `refs/heads/${refreshBranch}`;
 const title = "Update dotnet version pins";
 const configFilepath = path.relative(projectRoot, configPath);
 const textDecoder = new TextDecoder();
@@ -74,7 +75,7 @@ const main = async (): Promise<void> => {
   await git.commit({
     fs,
     dir: projectRoot,
-    ref: refreshBranch,
+    ref: refreshRef,
     message: `${title}\n\n${body}`,
     author: { name: "Renovate", email: "" },
   });
@@ -87,7 +88,7 @@ const main = async (): Promise<void> => {
     http,
     dir: projectRoot,
     remote: remote.remote,
-    ref: refreshBranch,
+    ref: refreshRef,
     force: true,
     onAuth: () => ({ username: "git", password: token }),
   });
