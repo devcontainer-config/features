@@ -18,7 +18,12 @@ export const createDevContainerRunner = async (env: Record<string, string> = {})
   const workspacePath = path.resolve(tempPath.path, path.basename(projectRoot));
   await mkdir(workspacePath, { recursive: true });
   const composeProject = path.basename(tempPath.path).toLowerCase();
-  const $$ = $({ ...shellOptions, cwd: workspacePath, env: { COMPOSE_PROJECT_NAME: composeProject } });
+  const $$ = $({
+    ...shellOptions,
+    cwd: workspacePath,
+    env: { COMPOSE_PROJECT_NAME: composeProject },
+    localDir: projectRoot,
+  });
 
   await cp(projectRoot, workspacePath, {
     recursive: true,

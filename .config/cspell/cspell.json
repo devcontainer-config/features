@@ -5,6 +5,9 @@
   "gitignoreRoot": ".",
   "ignorePaths": ["**/node_modules/**", "LICENSE"],
   "words": [
+    "aspnet",
+    "aspnetcore",
+    "buildx",
     "csharpierignore",
     "csharpierrc",
     "devcontainer",
@@ -16,8 +19,12 @@
     "hasha",
     "mktemp",
     "msbuild",
+    "NOLOGO",
     "packagejson",
     "syncpack",
-    "unrs"
+    "unrs",
+    "muxer",
+    "tarball",
+    "optout"
   ]
 }

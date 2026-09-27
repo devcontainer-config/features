@@ -1,10 +1,8 @@
-name: "Publish"
+name: "Renovate"
 
 on:
-  push:
-    tags:
-      - "*_[0-9]+.[0-9]+.[0-9]+"
-      - "!features-*"
+  schedule:
+    - cron: "0 0 7,21 * *"
   workflow_dispatch:
 
 permissions:
@@ -12,11 +10,13 @@ permissions:
   packages: read
 
 jobs:
-  publish:
+  renovate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (GitHub)
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v4
@@ -25,12 +25,11 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ github.token }}
 
-      - name: Publish
+      - name: Refresh the dotnet config
         uses: devcontainers/ci@v0.3
         with:
-          imageName: ghcr.io/${{ github.repository }}/devcontainer
           cacheFrom: ghcr.io/${{ github.repository }}/devcontainer
           push: never
-          runCmd: pnpm run publish
+          runCmd: pnpm tsx scripts/tasks/features/dotnet/renovate.ts
           env: |
-            CR_PAT=${{ secrets.CR_PAT }}
+            GH_TOKEN=${{ secrets.RENOVATE_TOKEN }}

@@ -5,6 +5,7 @@
     <ProjectRoot>$(MSBuildThisFileDirectory)</ProjectRoot>
     <ConfigDirectory>$([MSBuild]::NormalizeDirectory($(ProjectRoot), ".config", "dotnet"))</ConfigDirectory>
     <DirectoryPackagesPropsPath>$(ConfigDirectory)Packages.props</DirectoryPackagesPropsPath>
+    <DefaultTargetFramework>net10.0</DefaultTargetFramework>
   </PropertyGroup>
 
   <Import Project="$(ConfigDirectory)Project.props" />
