@@ -5,28 +5,20 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { $ } from "execa";
-import gitUrlParse from "git-url-parse";
 import git from "isomorphic-git";
 import http from "isomorphic-git/http/node";
 import * as prettier from "prettier";
 
 import prettierOptions from "@/.config/prettier/.prettierrc.json" with { type: "json" };
+import { getRemoteInfo } from "@/scripts/git.js";
 import { projectRoot } from "@/scripts/project.js";
 import { shellOptions } from "@/scripts/shell.js";
+import { imageFeatures } from "@/scripts/tasks/imageFeatures.js";
 
 const formatFile = async (path: string) => {
   const text = await readFile(path, "utf-8");
   const formatted = await prettier.format(text, { ...prettierOptions, filepath: path });
   await writeFile(path, formatted);
-};
-
-export const getRemoteInfo = async () => {
-  const url = (await git.listRemotes({ fs, dir: projectRoot })).at(0)?.url;
-  if (!url) {
-    throw new Error("Git remote not found");
-  }
-  const { owner, name: repo } = gitUrlParse(url);
-  return { owner, repo };
 };
 
 export const build = async () => {
@@ -63,4 +55,6 @@ export const build = async () => {
   } finally {
     await rm(tempPath, { recursive: true, force: true });
   }
+
+  await imageFeatures.write();
 };

@@ -1,6 +1,6 @@
 import { $ } from "execa";
 
-import { getRemoteInfo } from "@/scripts/tasks/build.js";
+import { getRemoteInfo } from "@/scripts/git.js";
 
 const ghcrHost = "ghcr.io";
 

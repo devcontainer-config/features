@@ -6,9 +6,6 @@ internal static class Registration
     private const string LinkPath = "/usr/local/bin/dotnet";
     private const string ProfileDir = "/etc/profile.d";
 
-    private const UnixFileMode Mode0644 =
-        UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead | UnixFileMode.OtherRead;
-
     internal static void Register(string root)
     {
         WriteInstallLocation(root);
@@ -21,7 +18,7 @@ internal static class Registration
         Directory.CreateDirectory(LocationDir);
         string path = Path.Join(LocationDir, "install_location");
         File.WriteAllText(path, $"{root}\n");
-        File.SetUnixFileMode(path, Mode0644);
+        File.SetUnixFileMode(path, Permissions.Mode0644);
         Console.WriteLine($"install: registered {root} in {path}");
     }
 
@@ -59,10 +56,11 @@ internal static class Registration
             export DOTNET_CLI_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/dotnet/cli"
             export NUGET_PACKAGES="${XDG_DATA_HOME:-$HOME/.local/share}/NuGet/global-packages"
             export DOTNET_CLI_TELEMETRY_OPTOUT=true
+            export DOTNET_SKIP_WORKLOAD_INTEGRITY_CHECK=true
             export PATH="$PATH:$DOTNET_CLI_HOME/.dotnet/tools"
             """
         );
-        File.SetUnixFileMode(path, Mode0644);
+        File.SetUnixFileMode(path, Permissions.Mode0644);
         Console.WriteLine($"install: wrote {path}");
     }
 }

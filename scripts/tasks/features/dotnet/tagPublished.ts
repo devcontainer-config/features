@@ -4,8 +4,8 @@ import { parseArgs } from "node:util";
 import { Octokit } from "@octokit/rest";
 import git from "isomorphic-git";
 
+import { getRemoteInfo } from "@/scripts/git.js";
 import { projectRoot } from "@/scripts/project.js";
-import { getRemoteInfo } from "@/scripts/tasks/build.js";
 
 import { readConfig } from "./generateConfig.js";
 import { parseComponent, parseVersion } from "./invocation.js";
