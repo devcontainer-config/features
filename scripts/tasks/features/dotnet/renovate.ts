@@ -6,8 +6,8 @@ import { Octokit } from "@octokit/rest";
 import git from "isomorphic-git";
 import http from "isomorphic-git/http/node";
 
+import { getRemoteInfo } from "@/scripts/git.js";
 import { projectRoot } from "@/scripts/project.js";
-import { getRemoteInfo } from "@/scripts/tasks/build.js";
 
 import type { Component, FeatureConfig } from "./generateConfig.js";
 import { components, configPath, generateConfig, parseConfig, readConfig } from "./generateConfig.js";

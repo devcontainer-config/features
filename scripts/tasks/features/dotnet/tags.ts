@@ -1,4 +1,4 @@
-import { getRemoteInfo } from "@/scripts/tasks/build.js";
+import { getRemoteInfo } from "@/scripts/git.js";
 
 import type { Component, FeatureConfig } from "./generateConfig.js";
 

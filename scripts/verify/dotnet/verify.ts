@@ -53,8 +53,13 @@ export const verify = async (argv: string[]): Promise<void> => {
   const tempPath = await mkdtempDisposable(path.join(tmpdir(), "devcontainer-verify-dotnet-"));
   const ctxPath = path.join(tempPath.path, "ctx");
   const runs = selected.map((name) =>
-    scenarios.create(name, { selection: derived, workspace: lifecycle.workspaceAt(tempPath.path, name) }),
+    scenarios.create(name, {
+      selection: derived,
+      root: tempPath.path,
+      workspace: lifecycle.workspaceAt(tempPath.path, name),
+    }),
   );
+  const variants = runs.flatMap((run) => run.variants);
   const apps = [...new Set(runs.flatMap((run) => (run.app === undefined ? [] : [run.app])))];
   const build =
     apps.length === 0
@@ -67,11 +72,15 @@ export const verify = async (argv: string[]): Promise<void> => {
   for (const run of runs) {
     testImages.set(run.testImage.tag, run.testImage);
   }
+  for (const variant of variants) {
+    testImages.set(variant.testImage.tag, variant.testImage);
+  }
   if (build !== undefined) {
     testImages.set(build.testImage.tag, build.testImage);
   }
   const workspaces: Workspace[] = [
     ...runs.map((run) => run.workspace),
+    ...variants.map((variant) => variant.workspace),
     ...(build === undefined ? [] : [build.workspace]),
   ];
 
@@ -94,6 +103,13 @@ export const verify = async (argv: string[]): Promise<void> => {
       await lifecycle.createWorkspace(run.workspace, { image: run.testImage.tag, remoteEnv: run.remoteEnv });
       await staging.features(run.workspace);
       await staging.assets(run.workspace, run.assets, run.directories);
+    }
+    for (const variant of variants) {
+      await lifecycle.createWorkspace(variant.workspace, {
+        image: variant.testImage.tag,
+        skipWorkloadIntegrityCheck: variant.skipWorkloadIntegrityCheck,
+      });
+      await staging.features(variant.workspace);
     }
     if (build !== undefined) {
       await lifecycle.createWorkspace(build.workspace, { image: build.testImage.tag });
@@ -128,6 +144,18 @@ export const verify = async (argv: string[]): Promise<void> => {
           await serve.assertResponse(server, run.serve);
         } finally {
           await server.kill();
+        }
+      }
+      for (const variant of run.variants) {
+        console.log(`>>> verify dotnet: scenario ${run.name} variant ${variant.name}`);
+        if ("buildFailure" in variant) {
+          await lifecycle.expectBuildFailure(variant.workspace, variant.buildFailure);
+          continue;
+        }
+        await lifecycle.buildContainer(variant.workspace);
+        await lifecycle.startContainer(variant.workspace);
+        for (const exec of variant.execs) {
+          assertions.exec(await lifecycle.execInContainer(variant.workspace, exec), exec.expect);
         }
       }
     }

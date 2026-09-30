@@ -1,0 +1,13 @@
+{
+  "id": "dotnet",
+  "name": "Dotnet",
+  "description": "Installs .NET SDK and/or the shared runtimes.",
+  "image": "ghcr.io/devcontainer-config/features/dotnet/sdk",
+  "options": {
+    "tabCompletions": {
+      "type": "boolean",
+      "default": true,
+      "description": "Generate shell tab completions for the dotnet CLI. Requires SDK 10 or newer."
+    }
+  }
+}

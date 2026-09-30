@@ -18,6 +18,7 @@
     "globalconfig",
     "hasha",
     "mktemp",
+    "libicu",
     "msbuild",
     "NOLOGO",
     "packagejson",

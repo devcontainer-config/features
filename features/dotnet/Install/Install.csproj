@@ -4,10 +4,13 @@
     <AssemblyName>install</AssemblyName>
     <OutputType>Exe</OutputType>
     <RootNamespace>DevcontainerConfig.Dotnet.Install</RootNamespace>
+    <ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="NuGet.Versioning" />
+    <ProjectReference Include="../../Features/Features.csproj" />
+    <ProjectReference Include="../Options/Options.csproj" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">

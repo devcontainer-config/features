@@ -24,6 +24,17 @@ The `COPY` target should match `featuresPath` (defaults to `/opt/devcontainer-co
 }
 ```
 
+A feature stages artifacts at `/features/<id>/`, and it's consumed by copying `--from=<image> /features/<id>/` into
+`<featuresPath>/<id>`:
+
+```dockerfile
+FROM some-feature
+
+FROM base-image
+
+COPY --from=some-feature /features/some-feature/ /opt/devcontainer-config/features/some-feature/
+```
+
 ### Feature convention
 
 | File            | Kind       | Required | Description                           |
@@ -36,6 +47,17 @@ The `COPY` target should match `featuresPath` (defaults to `/opt/devcontainer-co
 | `postStart`     | executable | false    | Corresponds to `postStartCommand`     |
 | `postAttach`    | executable | false    | Corresponds to `postAttachCommand`    |
 | `entrypoint`    | executable | false    | Corresponds to `entrypoint`           |
+
+### Options
+
+A feature may declare options in `feature.json`. Options can be specified by staging `options.json` to the feature
+payload path:
+
+```dockerfile
+COPY feature/some-feature/options.json /opt/devcontainer-config/features/some-feature/options.json
+```
+
+The feature's install reads that file itself; an absent file applies the declared defaults.
 
 ### Environment
 

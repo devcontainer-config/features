@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { cp, mkdir, writeFile } from "node:fs/promises";
 import path, { posix } from "node:path";
 
 import { $ } from "execa";
@@ -13,7 +13,7 @@ const baseImage = "mcr.microsoft.com/devcontainers/base:debian";
 const remoteUser = "verify";
 
 const $$docker = $({ reject: false, stdin: "ignore", stderr: "ignore" });
-const $$exec = $({ reject: false, stdio: ["ignore", "pipe", "pipe"], verbose: "full", cwd: projectRoot });
+const $$capture = $({ reject: false, stdio: ["ignore", "pipe", "pipe"], verbose: "full", cwd: projectRoot });
 
 export interface Workspace {
   path: string;
@@ -42,11 +42,14 @@ export interface StartedCommand {
 export interface TestImage {
   tag: string;
   components: readonly ComponentImage[];
+  dockerfile?: string;
+  files?: readonly string[];
 }
 
 export interface WorkspaceConfig {
   image: string;
   remoteEnv?: Readonly<Record<string, string>>;
+  skipWorkloadIntegrityCheck?: boolean;
 }
 
 const workspaceAt = (root: string, name: string): Workspace => {
@@ -97,7 +100,10 @@ const provision = async (components: readonly ComponentImage[], options: Provisi
 const testImageBuild = (image: TestImage): { dockerfile: string; args: string[] } => {
   const [only] = image.components;
   if (image.components.length === 1) {
-    return { dockerfile: "test-image.Dockerfile", args: [`DOTNET_IMAGE_REF=${only.ref}`] };
+    return { dockerfile: image.dockerfile ?? "test-image.Dockerfile", args: [`DOTNET_IMAGE_REF=${only.ref}`] };
+  }
+  if (image.dockerfile !== undefined) {
+    throw new Error(`${image.tag}: a variant dockerfile is only supported for single-component test images`);
   }
   return {
     dockerfile: "test-image-multi.Dockerfile",
@@ -108,6 +114,9 @@ const testImageBuild = (image: TestImage): { dockerfile: string; args: string[] 
 const buildTestImage = async (ctxPath: string, image: TestImage): Promise<void> => {
   const { dockerfile, args } = testImageBuild(image);
   await mkdir(ctxPath, { recursive: true });
+  for (const file of image.files ?? []) {
+    await cp(path.join(import.meta.dirname, file), path.join(ctxPath, file));
+  }
   await project$$`docker buildx build ${[
     "--network=none",
     "--load",
@@ -129,7 +138,7 @@ const createWorkspace = async (workspace: Workspace, config: WorkspaceConfig): P
     runArgs: ["--network=none"],
     remoteEnv: {
       DOTNET_NOLOGO: "1",
-      DOTNET_SKIP_WORKLOAD_INTEGRITY_CHECK: "1",
+      ...(config.skipWorkloadIntegrityCheck === false ? {} : { DOTNET_SKIP_WORKLOAD_INTEGRITY_CHECK: "1" }),
       ...config.remoteEnv,
     },
   };
@@ -146,12 +155,12 @@ const startContainer = async (workspace: Workspace): Promise<void> => {
 
 const execInContainer = async (workspace: Workspace, command: Command): Promise<CommandResult> => {
   const env = Object.entries(command.env ?? {}).flatMap(([name, value]) => ["--remote-env", `${name}=${value}`]);
-  const result = await $$exec`devcontainer exec ${["--workspace-folder", workspace.path]} ${env} ${command.command}`;
+  const result = await $$capture`devcontainer exec ${["--workspace-folder", workspace.path]} ${env} ${command.command}`;
   return { command: command.command, exitCode: result.exitCode, stdout: result.stdout, stderr: result.stderr };
 };
 
 const startInContainer = (workspace: Workspace, command: readonly string[]): StartedCommand => {
-  const child = $$exec`devcontainer exec ${["--workspace-folder", workspace.path]} ${command}`;
+  const child = $$capture`devcontainer exec ${["--workspace-folder", workspace.path]} ${command}`;
   const output: string[] = [];
   child.stdout?.on("data", (chunk: Buffer) => output.push(chunk.toString()));
   child.stderr?.on("data", (chunk: Buffer) => output.push(chunk.toString()));
@@ -164,6 +173,19 @@ const startInContainer = (workspace: Workspace, command: readonly string[]): Sta
       await child;
     },
   };
+};
+
+const expectBuildFailure = async (workspace: Workspace, message: string): Promise<void> => {
+  const result = await $$capture`devcontainer build ${["--workspace-folder", workspace.path]}`;
+  if (result.exitCode === 0) {
+    throw new Error(`devcontainer build ${workspace.path}: expected a failing build`);
+  }
+  const output = `${result.stdout}\n${result.stderr}`;
+  if (!output.includes(message)) {
+    throw new Error(
+      `devcontainer build ${workspace.path}: expected ${JSON.stringify(message)} in the output:\n${output}`,
+    );
+  }
 };
 
 const removeContainer = async (workspace: Workspace): Promise<void> => {
@@ -192,6 +214,7 @@ export const lifecycle = {
   startContainer,
   execInContainer,
   startInContainer,
+  expectBuildFailure,
   removeContainer,
   removeImage,
 } as const;

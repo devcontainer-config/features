@@ -2,8 +2,8 @@ import { Readable } from "node:stream";
 
 import { $ } from "execa";
 
+import { getRemoteInfo } from "@/scripts/git.js";
 import { $$, shellOptions } from "@/scripts/shell.js";
-import { getRemoteInfo } from "@/scripts/tasks/build.js";
 
 export const publish = async (featuresPath: string) => {
   const { owner, repo } = await getRemoteInfo();
