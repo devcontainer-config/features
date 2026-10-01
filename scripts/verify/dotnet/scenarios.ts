@@ -1,3 +1,4 @@
+// spell-checker:ignore compinit
 import path from "node:path";
 
 import type { Component } from "@/scripts/tasks/features/dotnet/generateConfig.js";
@@ -80,7 +81,7 @@ const definitions: Record<ScenarioName, ScenarioDefinition> = {
 
 const completionFiles = [
   "/usr/share/bash-completion/completions/dotnet",
-  "/usr/share/zsh/site-functions/_dotnet",
+  "/usr/local/share/zsh/site-functions/_dotnet",
   "/usr/share/fish/vendor_completions.d/dotnet.fish",
 ];
 
@@ -94,13 +95,18 @@ const completionsAbsent: Exec = {
   expect: { stdout: ["absent"] },
 };
 
-const completionRegistration: Exec = {
+const bashCompletionRegistration: Exec = {
   command: [
     "bash",
     "-lc",
     "source /usr/share/bash-completion/bash_completion; _completion_loader dotnet; complete -p dotnet",
   ],
   expect: { stdout: ["complete -F _dotnet dotnet"] },
+};
+
+const zshCompletionRegistration: Exec = {
+  command: ["zsh", "-f", "-c", "autoload -Uz compinit; compinit -D; print -r -- ${_comps[dotnet]:-NONE}"],
+  expect: { stdout: ["_dotnet"] },
 };
 
 const installResidue: Exec = {
@@ -193,7 +199,8 @@ const sdkBehavior = ({ selection, workspace }: ScenarioContext): ScenarioBehavio
       },
     },
     completionsPresent,
-    completionRegistration,
+    bashCompletionRegistration,
+    zshCompletionRegistration,
     installResidue,
     tmpPreserved,
   ],
