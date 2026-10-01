@@ -163,6 +163,7 @@ export const verify = async (argv: string[]): Promise<void> => {
     console.log(">>> verify dotnet: cleanup");
     for (const workspace of workspaces) {
       await lifecycle.removeContainer(workspace);
+      await lifecycle.removeWorkspaceImages(workspace);
     }
     if (values.rmi) {
       for (const image of testImages.values()) {

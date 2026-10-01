@@ -9,7 +9,7 @@ internal static class Completions
     private static readonly (string Shell, string Path)[] Targets =
     [
         ("bash", "/usr/share/bash-completion/completions/dotnet"),
-        ("zsh", "/usr/share/zsh/site-functions/_dotnet"),
+        ("zsh", "/usr/local/share/zsh/site-functions/_dotnet"),
         ("fish", "/usr/share/fish/vendor_completions.d/dotnet.fish"),
     ];
 

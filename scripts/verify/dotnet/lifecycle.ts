@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { cp, mkdir, writeFile } from "node:fs/promises";
 import path, { posix } from "node:path";
 
@@ -55,6 +56,17 @@ export interface WorkspaceConfig {
 const workspaceAt = (root: string, name: string): Workspace => {
   const directory = `workspace-${name}`;
   return { path: path.join(root, directory), containerPath: posix.join("/workspaces", directory) };
+};
+
+const workspaceImageName = (workspace: Workspace): string => {
+  const folderHash = createHash("sha256").update(workspace.path).digest("hex");
+  return `vsc-${path.basename(workspace.path)}-${folderHash}`;
+};
+
+const workspaceImages = async (workspace: Workspace): Promise<string[]> => {
+  const name = workspaceImageName(workspace);
+  const { stdout } = await $$docker`docker images ${["--format", "{{.Repository}}:{{.Tag}}"]}`;
+  return stdout.split("\n").filter((tag) => tag.startsWith(name));
 };
 
 export const imagesModes = ["build", "pull"] as const;
@@ -151,6 +163,11 @@ const buildContainer = async (workspace: Workspace): Promise<void> => {
 
 const startContainer = async (workspace: Workspace): Promise<void> => {
   await project$$`devcontainer up ${["--remove-existing-container", ...["--workspace-folder", workspace.path]]}`;
+  if ((await workspaceImages(workspace)).length === 0) {
+    throw new Error(
+      `devcontainer up ${workspace.path}: no images matching ${workspaceImageName(workspace)}*; the devcontainer CLI folder image naming may have changed`,
+    );
+  }
 };
 
 const execInContainer = async (workspace: Workspace, command: Command): Promise<CommandResult> => {
@@ -205,6 +222,13 @@ const removeImage = async (tag: string): Promise<void> => {
   await project$$`docker image rm ${tag}`;
 };
 
+const removeWorkspaceImages = async (workspace: Workspace): Promise<void> => {
+  const tags = await workspaceImages(workspace);
+  if (tags.length > 0) {
+    await project$$`docker image rm ${tags}`;
+  }
+};
+
 export const lifecycle = {
   provision,
   buildTestImage,
@@ -217,4 +241,5 @@ export const lifecycle = {
   expectBuildFailure,
   removeContainer,
   removeImage,
+  removeWorkspaceImages,
 } as const;
