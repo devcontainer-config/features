@@ -1,7 +1,6 @@
 services:
   devcontainer:
     env_file:
-      - container.env
       - path: ../.local/.env
         required: false
     build:

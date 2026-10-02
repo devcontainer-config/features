@@ -3,7 +3,6 @@ import path from "node:path";
 
 import { $ } from "execa";
 
-import { cachePath } from "./config.js";
 import { packageJson } from "./package.js";
 
 const insertShebang = async (path: string) => {
@@ -20,12 +19,10 @@ export const install = async () => {
 
   const workspacesPath = process.env.WORKSPACES ?? "/workspaces";
   await mkdir(workspacesPath, { recursive: true });
-  await mkdir(cachePath, { recursive: true });
   if (path.basename(import.meta.dirname) === "dist") {
     // called from install.dist.sh.
     const $$ = $({ stdio: "inherit", verbose: "full" });
     await $$`chmod -R a=rwx ${workspacesPath}`;
-    await $$`chmod -R a=rwx ${cachePath}`;
 
     await cp(import.meta.dirname, featureInstallPath, { recursive: true, verbatimSymlinks: true });
     await $$`npm install --global ${featureInstallPath}`;
@@ -45,7 +42,6 @@ export const install = async () => {
       },
     });
     await $$`chmod -R a=rwx ${workspacesPath}`;
-    await $$`chmod -R a=rwx ${cachePath}`;
 
     await $$`tsc --project ${import.meta.dirname} --noEmit false --outDir .`;
     await writeFile(path.resolve(tempPath, "package.json"), JSON.stringify(packageJson, null, 2));

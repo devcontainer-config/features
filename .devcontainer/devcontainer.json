@@ -20,8 +20,8 @@
     }
   ],
   "features": {
-    // "ghcr.io/devcontainer-config/features/user-init:3": {},
-    // "ghcr.io/devcontainer-config/features/dot-config:4": {},
+    // "ghcr.io/devcontainer-config/features/user-init:4": {},
+    // "ghcr.io/devcontainer-config/features/dot-config:5": {},
     // "ghcr.io/devcontainer-config/features/features": {},
     "./features/src/user-init": {},
     "./features/src/dot-config": {},

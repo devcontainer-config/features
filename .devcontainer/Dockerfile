@@ -10,7 +10,4 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/* \
   && npm install --global pnpm@latest-11
 
-RUN mkdir --parents /usr/share/dotnet /usr/share/devcontainer-config/NuGet/global-packages \
-  && chmod --recursive a+rwX /usr/share/dotnet /usr/share/devcontainer-config
-
 COPY --from=dotnet /features/dotnet/ /opt/devcontainer-config/features/dotnet/

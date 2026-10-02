@@ -15,15 +15,17 @@ test("remote user home", async () => {
 });
 
 test("XDG base directories", async () => {
-  const dirs = {
+  const { username } = userInfo();
+  const roots = {
     XDG_CONFIG_HOME: "/etc/devcontainer-config",
     XDG_CACHE_HOME: "/var/cache/devcontainer-config",
     XDG_DATA_HOME: "/usr/share/devcontainer-config",
     XDG_STATE_HOME: "/var/lib/devcontainer-config",
   } as const;
 
-  for (const [name, dir] of Object.entries(dirs)) {
-    expect(process.env[name]).toBe(dir);
-    await access(dir, R_OK | W_OK | X_OK);
+  for (const [name, root] of Object.entries(roots)) {
+    const directory = `${root}/${username}`;
+    expect(process.env[name]).toBe(directory);
+    await access(directory, R_OK | W_OK | X_OK);
   }
 });

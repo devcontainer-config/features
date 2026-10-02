@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import path from "node:path";
+import path, { posix } from "node:path";
 
 import { z } from "zod";
 
@@ -8,9 +8,14 @@ import type { Component, FeatureConfig } from "@/scripts/tasks/features/dotnet/g
 import { configPath, readConfig } from "@/scripts/tasks/features/dotnet/generateConfig.js";
 import { canonicalTag, imageRef } from "@/scripts/tasks/features/dotnet/tags.js";
 
-const userInitFeaturePath = path.resolve(projectRoot, ".devcontainer/features/src/user-init/devcontainer-feature.json");
+import { remoteUser } from "./lifecycle.js";
 
-const userInitFeatureSchema = z.object({ containerEnv: z.object({ XDG_DATA_HOME: z.string() }) });
+const userInitFeaturePath = path.resolve(projectRoot, ".devcontainer/features/src/user-init/devcontainer-feature.json");
+const dataRootSource = "XDG_DATA_HOME-${devcontainerId}";
+
+const userInitFeatureSchema = z.object({
+  mounts: z.array(z.object({ source: z.string(), target: z.string() })),
+});
 
 export interface ComponentImage {
   component: Component;
@@ -57,7 +62,11 @@ const readGlobalPackagesPath = async (): Promise<string> => {
   if (!result.success) {
     throw new Error(`${userInitFeaturePath}: ${z.prettifyError(result.error)}`);
   }
-  return `${result.data.containerEnv.XDG_DATA_HOME}/NuGet/global-packages`;
+  const dataRoot = result.data.mounts.find((mount) => mount.source === dataRootSource)?.target;
+  if (dataRoot === undefined) {
+    throw new Error(`${userInitFeaturePath}: no mounts entry with source ${dataRootSource}`);
+  }
+  return posix.join(dataRoot, remoteUser, "NuGet/global-packages");
 };
 
 const derive = async (channel: string, prefix: string): Promise<Selection> => {

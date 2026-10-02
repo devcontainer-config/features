@@ -8,7 +8,6 @@ import { packageJson } from "./package.js";
 import { sync } from "./sync.js";
 import { watch } from "./watch.js";
 
-initializeLogger();
 const projectRoot = process.cwd();
 
 program.name(packageJson.name).version(packageJson.version);
@@ -17,6 +16,7 @@ program
   .command("sync")
   .description("perform a one-time synchronization of .config/ files")
   .action(async () => {
+    initializeLogger();
     try {
       await sync(projectRoot);
     } catch (error) {
@@ -33,6 +33,7 @@ program
       const childProcess = $({ detached: true, stdio: "ignore" })`${packageJson.name} watch`;
       childProcess.nodeChildProcess.unref();
     } else {
+      initializeLogger();
       watch(projectRoot);
     }
   });
