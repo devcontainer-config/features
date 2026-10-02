@@ -11,7 +11,7 @@ import { login } from "@/scripts/tasks/features/dotnet/registry.js";
 import type { ComponentImage } from "./selection.js";
 
 const baseImage = "mcr.microsoft.com/devcontainers/base:debian";
-const remoteUser = "verify";
+export const remoteUser = "verify";
 
 const $$docker = $({ reject: false, stdin: "ignore", stderr: "ignore" });
 const $$capture = $({ reject: false, stdio: ["ignore", "pipe", "pipe"], verbose: "full", cwd: projectRoot });

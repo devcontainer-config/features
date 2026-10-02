@@ -1,8 +1,16 @@
+import { homedir } from "node:os";
 import path from "node:path";
 
 import winston from "winston";
 
-import { cachePath } from "./config.js";
+const cacheRoot = (): string => {
+  const xdgCacheHome = process.env.XDG_CACHE_HOME;
+  const cacheHome =
+    xdgCacheHome !== undefined && xdgCacheHome !== "" && path.isAbsolute(xdgCacheHome)
+      ? xdgCacheHome
+      : path.join(homedir(), ".cache");
+  return path.join(cacheHome, "dot-config");
+};
 
 export const initializeLogger = () => {
   winston.configure({
@@ -13,7 +21,7 @@ export const initializeLogger = () => {
         handleRejections: true,
       }),
       new winston.transports.File({
-        filename: path.resolve(cachePath, "dot-config.log"),
+        filename: path.join(cacheRoot(), "dot-config.log"),
         options: { flags: "w" },
         format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
         handleExceptions: true,
