@@ -1,0 +1,6 @@
+{
+  "id": "ripgrep",
+  "name": "Ripgrep",
+  "description": "Installs the ripgrep line-oriented search tool.",
+  "image": "ghcr.io/devcontainer-config/features/ripgrep"
+}

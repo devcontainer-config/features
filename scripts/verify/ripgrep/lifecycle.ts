@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { cp, mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path, { posix } from "node:path";
 
 import { $ } from "execa";
@@ -8,10 +8,9 @@ import { projectRoot } from "@/scripts/project.js";
 import { project$$ } from "@/scripts/shell.js";
 import { login } from "@/scripts/tasks/features/registry.js";
 
-import type { ComponentImage } from "./selection.js";
-
 const baseImage = "mcr.microsoft.com/devcontainers/base:debian";
-export const remoteUser = "verify";
+const remoteUser = "verify";
+export const testImagePrefix = "features-verify-ripgrep";
 
 const $$docker = $({ reject: false, stdin: "ignore", stderr: "ignore" });
 const $$capture = $({ reject: false, stdio: ["ignore", "pipe", "pipe"], verbose: "full", cwd: projectRoot });
@@ -23,7 +22,6 @@ export interface Workspace {
 
 export interface Command {
   command: readonly string[];
-  env?: Readonly<Record<string, string>>;
 }
 
 export interface CommandResult {
@@ -33,24 +31,8 @@ export interface CommandResult {
   stderr: string;
 }
 
-export interface StartedCommand {
-  command: readonly string[];
-  hasExited(): boolean;
-  output(): string;
-  kill(): Promise<void>;
-}
-
-export interface TestImage {
-  tag: string;
-  components: readonly ComponentImage[];
-  dockerfile?: string;
-  files?: readonly string[];
-}
-
 export interface WorkspaceConfig {
   image: string;
-  remoteEnv?: Readonly<Record<string, string>>;
-  skipWorkloadIntegrityCheck?: boolean;
 }
 
 const workspaceAt = (root: string, name: string): Workspace => {
@@ -74,34 +56,27 @@ export type ImagesMode = (typeof imagesModes)[number];
 
 export interface ProvisionOptions {
   images: ImagesMode;
+  version: string;
+  ref: string;
   channel: string;
   prefix: string;
   force: boolean;
 }
 
-const provisionComponent = async (
-  { component, version, ref }: ComponentImage,
-  options: ProvisionOptions,
-): Promise<void> => {
-  if (options.images === "pull") {
-    await project$$`docker pull ${ref}`;
-    return;
-  }
-  const args = [...["--component", component], ...["--version", version], ...(options.force ? ["--force"] : [])];
-  await project$$`tsx scripts/tasks/features/dotnet/fetchPayload.ts ${args}`;
-  await project$$`tsx scripts/tasks/features/dotnet/buildImage.ts ${[
-    ...args,
-    ...["--channel", options.channel],
-    ...["--prefix", options.prefix],
-  ]}`;
-};
-
-const provision = async (components: readonly ComponentImage[], options: ProvisionOptions): Promise<void> => {
+const provision = async (options: ProvisionOptions): Promise<void> => {
   if (options.images === "pull") {
     await login(options.prefix);
-  }
-  for (const component of components) {
-    await provisionComponent(component, options);
+    await project$$`docker pull ${options.ref}`;
+  } else {
+    await project$$`tsx scripts/tasks/features/ripgrep/fetchPayload.ts ${[
+      ...["--version", options.version],
+      ...(options.force ? ["--force"] : []),
+    ]}`;
+    await project$$`tsx scripts/tasks/features/ripgrep/buildImage.ts ${[
+      ...["--version", options.version],
+      ...["--channel", options.channel],
+      ...["--prefix", options.prefix],
+    ]}`;
   }
   const inspect = await $$docker`docker image inspect ${baseImage}`;
   if (inspect.exitCode !== 0) {
@@ -109,32 +84,14 @@ const provision = async (components: readonly ComponentImage[], options: Provisi
   }
 };
 
-const testImageBuild = (image: TestImage): { dockerfile: string; args: string[] } => {
-  const [only] = image.components;
-  if (image.components.length === 1) {
-    return { dockerfile: image.dockerfile ?? "test-image.Dockerfile", args: [`DOTNET_IMAGE_REF=${only.ref}`] };
-  }
-  if (image.dockerfile !== undefined) {
-    throw new Error(`${image.tag}: a variant dockerfile is only supported for single-component test images`);
-  }
-  return {
-    dockerfile: "test-image-multi.Dockerfile",
-    args: image.components.map(({ component, ref }) => `DOTNET_${component.toUpperCase()}_IMAGE_REF=${ref}`),
-  };
-};
-
-const buildTestImage = async (ctxPath: string, image: TestImage): Promise<void> => {
-  const { dockerfile, args } = testImageBuild(image);
+const buildTestImage = async (ctxPath: string, version: string, ref: string): Promise<void> => {
   await mkdir(ctxPath, { recursive: true });
-  for (const file of image.files ?? []) {
-    await cp(path.join(import.meta.dirname, file), path.join(ctxPath, file));
-  }
   await project$$`docker buildx build ${[
     "--network=none",
     "--load",
-    ...["--tag", image.tag],
-    ...["--file", path.join(import.meta.dirname, dockerfile)],
-    ...args.flatMap((arg) => ["--build-arg", arg]),
+    ...["--tag", `${testImagePrefix}:${version}`],
+    ...["--file", path.join(import.meta.dirname, "test-image.Dockerfile")],
+    ...["--build-arg", `RIPGREP_IMAGE_REF=${ref}`],
     ctxPath,
   ]}`;
 };
@@ -148,11 +105,6 @@ const createWorkspace = async (workspace: Workspace, config: WorkspaceConfig): P
     remoteUser,
     containerUser: remoteUser,
     runArgs: ["--network=none"],
-    remoteEnv: {
-      DOTNET_NOLOGO: "1",
-      ...(config.skipWorkloadIntegrityCheck === false ? {} : { DOTNET_SKIP_WORKLOAD_INTEGRITY_CHECK: "1" }),
-      ...config.remoteEnv,
-    },
   };
   await writeFile(path.join(devcontainerPath, "devcontainer.json"), `${JSON.stringify(data, null, 2)}\n`);
 };
@@ -171,38 +123,8 @@ const startContainer = async (workspace: Workspace): Promise<void> => {
 };
 
 const execInContainer = async (workspace: Workspace, command: Command): Promise<CommandResult> => {
-  const env = Object.entries(command.env ?? {}).flatMap(([name, value]) => ["--remote-env", `${name}=${value}`]);
-  const result = await $$capture`devcontainer exec ${["--workspace-folder", workspace.path]} ${env} ${command.command}`;
+  const result = await $$capture`devcontainer exec ${["--workspace-folder", workspace.path]} ${command.command}`;
   return { command: command.command, exitCode: result.exitCode, stdout: result.stdout, stderr: result.stderr };
-};
-
-const startInContainer = (workspace: Workspace, command: readonly string[]): StartedCommand => {
-  const child = $$capture`devcontainer exec ${["--workspace-folder", workspace.path]} ${command}`;
-  const output: string[] = [];
-  child.stdout?.on("data", (chunk: Buffer) => output.push(chunk.toString()));
-  child.stderr?.on("data", (chunk: Buffer) => output.push(chunk.toString()));
-  return {
-    command,
-    hasExited: () => child.nodeChildProcess.exitCode !== null || child.nodeChildProcess.signalCode !== null,
-    output: () => output.join(""),
-    kill: async () => {
-      child.kill();
-      await child;
-    },
-  };
-};
-
-const expectBuildFailure = async (workspace: Workspace, message: string): Promise<void> => {
-  const result = await $$capture`devcontainer build ${["--workspace-folder", workspace.path]}`;
-  if (result.exitCode === 0) {
-    throw new Error(`devcontainer build ${workspace.path}: expected a failing build`);
-  }
-  const output = `${result.stdout}\n${result.stderr}`;
-  if (!output.includes(message)) {
-    throw new Error(
-      `devcontainer build ${workspace.path}: expected ${JSON.stringify(message)} in the output:\n${output}`,
-    );
-  }
 };
 
 const removeContainer = async (workspace: Workspace): Promise<void> => {
@@ -237,8 +159,6 @@ export const lifecycle = {
   buildContainer,
   startContainer,
   execInContainer,
-  startInContainer,
-  expectBuildFailure,
   removeContainer,
   removeImage,
   removeWorkspaceImages,

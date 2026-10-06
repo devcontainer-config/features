@@ -7,24 +7,23 @@ import git from "isomorphic-git";
 import { projectRoot } from "@/scripts/project.js";
 import { refresh } from "@/scripts/tasks/features/renovate.js";
 
-import type { Component, FeatureConfig } from "./generateConfig.js";
-import { components, configPath, generateConfig, parseConfig, readConfig } from "./generateConfig.js";
+import type { FeatureConfig } from "./generateConfig.js";
+import { configPath, generateConfig, parseConfig, readConfig } from "./generateConfig.js";
 
-const title = "Update dotnet version pins";
+const title = "Update ripgrep version pins";
 const configFilepath = path.relative(projectRoot, configPath);
 const textDecoder = new TextDecoder();
 
-const versionPins = (previous: FeatureConfig, next: FeatureConfig): string[] =>
-  components.flatMap((component: Component) => {
-    const before = Object.keys(previous.components[component].versions);
-    const after = Object.keys(next.components[component].versions);
-    const removed = before.filter((version) => !after.includes(version));
-    const added = after.filter((version) => !before.includes(version));
-    if (removed.length === 0 && added.length === 0) {
-      return [];
-    }
-    return [`${component}: ${removed.join(", ")} → ${added.join(", ")}`];
-  });
+const versionPins = (previous: FeatureConfig, next: FeatureConfig): string[] => {
+  const before = Object.keys(previous.versions);
+  const after = Object.keys(next.versions);
+  const removed = before.filter((version) => !after.includes(version));
+  const added = after.filter((version) => !before.includes(version));
+  if (removed.length === 0 && added.length === 0) {
+    return [];
+  }
+  return [`${removed.join(", ")} → ${added.join(", ")}`];
+};
 
 const headConfig = async (oid: string): Promise<FeatureConfig> => {
   const { blob } = await git.readBlob({ fs, dir: projectRoot, oid, filepath: configFilepath });
@@ -41,7 +40,7 @@ const main = async (): Promise<void> => {
   await generateConfig();
   await refresh(
     {
-      branch: "renovate",
+      branch: "renovate/ripgrep",
       title,
       filepath: configFilepath,
       body: async (headOid) => versionPins(await headConfig(headOid), await readConfig()).join("\n"),

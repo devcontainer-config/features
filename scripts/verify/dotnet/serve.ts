@@ -47,11 +47,11 @@ const assertResponse = async (server: StartedCommand, { socketPath, expectedBody
     const response = await attempt(socketPath);
     if (response !== undefined) {
       if (response.statusCode !== 200) {
-        throw new Error(`GET ${socketPath} returned HTTP ${String(response.statusCode)} — expected 200`);
+        throw new Error(`GET ${socketPath} returned HTTP ${String(response.statusCode)}, expected 200`);
       }
       if (response.body !== expectedBody) {
         throw new Error(
-          `GET ${socketPath} returned ${JSON.stringify(response.body)} — expected ${JSON.stringify(expectedBody)}`,
+          `GET ${socketPath} returned ${JSON.stringify(response.body)}, expected ${JSON.stringify(expectedBody)}`,
         );
       }
       return;

@@ -3,7 +3,7 @@ import { parseArgs } from "node:util";
 import { planPublish } from "@/scripts/tasks/features/planPublish.js";
 import { defaultRefPrefix, mainChannel } from "@/scripts/tasks/features/tags.js";
 
-import { components, readConfig } from "./generateConfig.js";
+import { readConfig } from "./generateConfig.js";
 import { canonicalTag, imageRef, tagNames } from "./tags.js";
 
 const main = async (): Promise<void> => {
@@ -18,15 +18,12 @@ const main = async (): Promise<void> => {
   const channel = values.channel;
   const prefix = values.prefix ?? (await defaultRefPrefix());
   const config = await readConfig();
-  const pairs = components.flatMap((component) =>
-    Object.keys(config.components[component].versions).map((version) => ({ component, version })),
-  );
   await planPublish(
-    pairs.map(({ component, version }) => ({
-      label: `${component} ${version}`,
-      canonical: imageRef(prefix, component, canonicalTag(config, component, version, channel)),
-      tags: tagNames(config, component, version, channel),
-      entry: { component, version },
+    Object.keys(config.versions).map((version) => ({
+      label: version,
+      canonical: imageRef(prefix, canonicalTag(config, version, channel)),
+      tags: tagNames(config, version, channel),
+      entry: { version },
     })),
     { channel, prefix, out: values.out },
   );

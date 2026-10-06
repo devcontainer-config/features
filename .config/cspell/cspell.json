@@ -22,6 +22,7 @@
     "msbuild",
     "NOLOGO",
     "packagejson",
+    "pcre",
     "syncpack",
     "unrs",
     "muxer",

@@ -6,8 +6,7 @@ import { defaultRefPrefix, mainChannel } from "@/scripts/tasks/features/tags.js"
 
 import { assembleBuildContext } from "./buildContext.js";
 import { readConfig } from "./generateConfig.js";
-import { resolveInstallBinaries } from "./installBinary.js";
-import { parseComponent, parseVersion } from "./invocation.js";
+import { parseVersion } from "./invocation.js";
 import { paths } from "./paths.js";
 import { ensurePayload } from "./payload.js";
 import { imageRefs, tagNames } from "./tags.js";
@@ -15,27 +14,23 @@ import { imageRefs, tagNames } from "./tags.js";
 const main = async (): Promise<void> => {
   const { values } = parseArgs({
     options: {
-      component: { type: "string" },
       version: { type: "string" },
       channel: { type: "string", default: mainChannel },
-      "install-dir": { type: "string" },
       prefix: { type: "string" },
     },
   });
 
-  const component = parseComponent(values.component);
   const version = parseVersion(values.version);
   const channel = values.channel;
   const prefix = values.prefix ?? (await defaultRefPrefix());
   const config = await readConfig();
-  const tags = tagNames(config, component, version, channel);
-  const installBinaries = await resolveInstallBinaries(values["install-dir"]);
+  const tags = tagNames(config, version, channel);
   for (const arch of paths.dockerArchOptions) {
-    await ensurePayload(component, version, arch, false);
+    await ensurePayload(version, arch, false);
   }
-  const context = await assembleBuildContext(component, version, installBinaries);
+  const context = await assembleBuildContext(version, paths.dockerArchOptions);
   await login(prefix);
-  const refs = imageRefs(prefix, component, tags);
+  const refs = imageRefs(prefix, tags);
   await pushImage(context, refs);
   console.log(refs.join("\n"));
 };
