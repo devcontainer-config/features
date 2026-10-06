@@ -4,21 +4,19 @@ import { tagPublished } from "@/scripts/tasks/features/tagPublished.js";
 import { mainChannel } from "@/scripts/tasks/features/tags.js";
 
 import { readConfig } from "./generateConfig.js";
-import { parseComponent, parseVersion } from "./invocation.js";
+import { parseVersion } from "./invocation.js";
 import { canonicalTag } from "./tags.js";
 
 const main = async (): Promise<void> => {
   const { values } = parseArgs({
     options: {
-      component: { type: "string" },
       version: { type: "string" },
     },
   });
 
-  const component = parseComponent(values.component);
   const version = parseVersion(values.version);
   const config = await readConfig();
-  await tagPublished(`features-dotnet-${component}-${canonicalTag(config, component, version, mainChannel)}`);
+  await tagPublished(`features-ripgrep-${canonicalTag(config, version, mainChannel)}`);
 };
 
 if (import.meta.main) {

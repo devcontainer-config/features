@@ -7,24 +7,20 @@ import { defaultRefPrefix, mainChannel } from "@/scripts/tasks/features/tags.js"
 import { assembleBuildContext } from "./buildContext.js";
 import { readConfig } from "./generateConfig.js";
 import { parseInvocation } from "./invocation.js";
-import { ensurePackBinary } from "./packBinary.js";
 import { paths } from "./paths.js";
 import { imageRefs, tagNames } from "./tags.js";
 
 const main = async (): Promise<void> => {
   const { values } = parseArgs({
     options: {
-      component: { type: "string" },
       version: { type: "string" },
       arch: { type: "string" },
-      tag: { type: "string", multiple: true },
       channel: { type: "string", default: mainChannel },
       prefix: { type: "string" },
-      force: { type: "boolean", default: false },
     },
   });
 
-  const { component, version, arch } = parseInvocation(values);
+  const { version, arch } = parseInvocation(values);
   const channel = values.channel;
   const prefix = values.prefix ?? (await defaultRefPrefix());
   if (arch !== paths.hostArch()) {
@@ -33,17 +29,16 @@ const main = async (): Promise<void> => {
     );
   }
 
-  const install = await ensurePackBinary("install", paths.ridFor(arch), values.force);
-  const payload = paths.payloadPath(component, version, arch);
-  if (!(await paths.isFile(path.join(payload, "dotnet")))) {
+  const payload = paths.payloadPath(version, arch);
+  if (!(await paths.isFile(path.join(payload, "rg")))) {
     throw new Error(
-      `No payload at ${payload}; run scripts/tasks/features/dotnet/fetchPayload.ts --component ${component} --version ${version} --arch ${arch} first`,
+      `No payload at ${payload}; run scripts/tasks/features/ripgrep/fetchPayload.ts --version ${version} --arch ${arch} first`,
     );
   }
 
-  const context = await assembleBuildContext(component, version, { [arch]: install });
+  const context = await assembleBuildContext(version, [arch]);
   const config = await readConfig();
-  const refs = [...imageRefs(prefix, component, tagNames(config, component, version, channel)), ...(values.tag ?? [])];
+  const refs = imageRefs(prefix, tagNames(config, version, channel));
   await $$`docker buildx build ${[
     ...["--platform", `linux/${arch}`],
     "--load",

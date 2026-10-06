@@ -12,6 +12,10 @@ permissions:
 jobs:
   renovate:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        feature: [dotnet, ripgrep]
     steps:
       - name: Checkout (GitHub)
         uses: actions/checkout@v7
@@ -25,11 +29,11 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ github.token }}
 
-      - name: Refresh the dotnet config
+      - name: Refresh the ${{ matrix.feature }} config
         uses: devcontainers/ci@v0.3
         with:
           cacheFrom: ghcr.io/${{ github.repository }}/devcontainer
           push: never
-          runCmd: pnpm tsx scripts/tasks/features/dotnet/renovate.ts
+          runCmd: pnpm tsx scripts/tasks/features/${{ matrix.feature }}/renovate.ts
           env: |
             GH_TOKEN=${{ secrets.RENOVATE_TOKEN }}

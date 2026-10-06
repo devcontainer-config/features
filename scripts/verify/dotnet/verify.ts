@@ -4,7 +4,7 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 
 import type { Component } from "@/scripts/tasks/features/dotnet/generateConfig.js";
-import { defaultRefPrefix, mainChannel } from "@/scripts/tasks/features/dotnet/tags.js";
+import { defaultRefPrefix, mainChannel } from "@/scripts/tasks/features/tags.js";
 
 import { assertions } from "./assertions.js";
 import type { TestImage, Workspace } from "./lifecycle.js";
