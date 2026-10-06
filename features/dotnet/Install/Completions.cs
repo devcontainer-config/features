@@ -8,9 +8,9 @@ internal static class Completions
 
     private static readonly (string Shell, string Path)[] Targets =
     [
-        ("bash", "/usr/share/bash-completion/completions/dotnet"),
+        ("bash", "/usr/local/share/bash-completion/completions/dotnet"),
         ("zsh", "/usr/local/share/zsh/site-functions/_dotnet"),
-        ("fish", "/usr/share/fish/vendor_completions.d/dotnet.fish"),
+        ("fish", "/usr/local/share/fish/vendor_completions.d/dotnet.fish"),
     ];
 
     internal static async Task GenerateAsync(string root, IEnumerable<Source> sources)
