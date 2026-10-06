@@ -80,9 +80,9 @@ const definitions: Record<ScenarioName, ScenarioDefinition> = {
 };
 
 const completionFiles = [
-  "/usr/share/bash-completion/completions/dotnet",
+  "/usr/local/share/bash-completion/completions/dotnet",
   "/usr/local/share/zsh/site-functions/_dotnet",
-  "/usr/share/fish/vendor_completions.d/dotnet.fish",
+  "/usr/local/share/fish/vendor_completions.d/dotnet.fish",
 ];
 
 const completionsPresent: Exec = {
