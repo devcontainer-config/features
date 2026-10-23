@@ -71,7 +71,7 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ github.token }}
 
-      - name: Pack the install binary
+      - name: Pack the Feature binary
         uses: devcontainers/ci@v0.3
         with:
           imageName: ${{ matrix.arm64 && format('ghcr.io/{0}/devcontainer', github.repository) || '' }}
@@ -80,15 +80,15 @@ jobs:
           refFilterForPush: ${{ matrix.arm64 && 'refs/heads/main' || '' }}
           useNativeRunner: ${{ matrix.arm64 }}
           platform: ${{ matrix.arm64 && 'linux/arm64' || '' }}
-          runCmd: pnpm tsx scripts/tasks/features/dotnet/packInstall.ts --rid "$RID" --out .ci/install
+          runCmd: pnpm tsx scripts/tasks/features/dotnet/packFeature.ts --rid "$RID" --out .ci/feature
           env: |
             RID=${{ matrix.rid }}
 
-      - name: Upload the install binary
+      - name: Upload the Feature archive
         uses: actions/upload-artifact@v7
         with:
-          name: install-${{ matrix.rid }}
-          path: .ci/install/${{ matrix.rid }}/
+          name: feature-${{ matrix.rid }}
+          path: .ci/feature/${{ matrix.rid }}.tar
 
   image:
     needs:
@@ -110,24 +110,24 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ github.token }}
 
-      - name: Download the x64 install binary
+      - name: Download the x64 Feature archive
         uses: actions/download-artifact@v7
         with:
-          name: install-linux-x64
-          path: .ci/install/linux-x64
+          name: feature-linux-x64
+          path: .ci/feature
 
-      - name: Download the arm64 install binary
+      - name: Download the arm64 Feature archive
         uses: actions/download-artifact@v7
         with:
-          name: install-linux-arm64
-          path: .ci/install/linux-arm64
+          name: feature-linux-arm64
+          path: .ci/feature
 
       - name: Publish the image
         uses: devcontainers/ci@v0.3
         with:
           cacheFrom: ghcr.io/${{ github.repository }}/devcontainer
           push: never
-          runCmd: pnpm tsx scripts/tasks/features/dotnet/publishImage.ts --component ${{ matrix.component }} --version ${{ matrix.version }} --channel "$CHANNEL" --install-dir .ci/install
+          runCmd: pnpm tsx scripts/tasks/features/dotnet/publishImage.ts --component ${{ matrix.component }} --version ${{ matrix.version }} --channel "$CHANNEL" --install-dir .ci/feature
           env: |
             CHANNEL=${{ github.head_ref || github.ref_name }}
             GH_TOKEN=${{ github.token }}

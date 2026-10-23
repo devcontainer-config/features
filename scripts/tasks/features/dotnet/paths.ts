@@ -8,7 +8,7 @@ import type { Component, Rid } from "./generateConfig.js";
 const dockerArchOptions = ["amd64", "arm64"] as const;
 export type DockerArch = (typeof dockerArchOptions)[number];
 
-export type Assembly = "build" | "install";
+export type Assembly = "Build" | "Feature";
 
 const hostArch = (): DockerArch => {
   switch (process.arch) {

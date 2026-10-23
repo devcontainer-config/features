@@ -1,11 +1,8 @@
-import { createHash } from "node:crypto";
-import { createWriteStream } from "node:fs";
 import { mkdir, rename, rm } from "node:fs/promises";
 import path from "node:path";
-import { Readable, Transform } from "node:stream";
-import { pipeline } from "node:stream/promises";
 
 import { $$ } from "@/scripts/shell.js";
+import { download } from "@/scripts/tasks/features/download.js";
 
 import { configPath, readConfig } from "./generateConfig.js";
 import type { DockerArch } from "./paths.js";
@@ -21,25 +18,6 @@ const entries = [
   "LICENSE-MIT",
   "UNLICENSE",
 ] as const;
-
-const download = async (url: string, destination: string): Promise<string> => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`GET ${url} → HTTP ${response.status}`);
-  }
-  if (response.body === null) {
-    throw new Error(`GET ${url}: no response body`);
-  }
-  const hash = createHash("sha256");
-  const digest = new Transform({
-    transform(chunk: Buffer, _encoding, callback) {
-      hash.update(chunk);
-      callback(null, chunk);
-    },
-  });
-  await pipeline(Readable.fromWeb(response.body), digest, createWriteStream(destination));
-  return hash.digest("hex");
-};
 
 export const ensurePayload = async (version: string, arch: DockerArch, force: boolean): Promise<void> => {
   const outPath = paths.payloadPath(version, arch);

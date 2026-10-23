@@ -5,8 +5,8 @@ import { login } from "@/scripts/tasks/features/registry.js";
 import { defaultRefPrefix, mainChannel } from "@/scripts/tasks/features/tags.js";
 
 import { assembleBuildContext } from "./buildContext.js";
+import { resolveFeatureBinaries } from "./featureBinary.js";
 import { readConfig } from "./generateConfig.js";
-import { resolveInstallBinaries } from "./installBinary.js";
 import { parseComponent, parseVersion } from "./invocation.js";
 import { paths } from "./paths.js";
 import { ensurePayload } from "./payload.js";
@@ -29,11 +29,11 @@ const main = async (): Promise<void> => {
   const prefix = values.prefix ?? (await defaultRefPrefix());
   const config = await readConfig();
   const tags = tagNames(config, component, version, channel);
-  const installBinaries = await resolveInstallBinaries(values["install-dir"]);
+  const featureBinaries = await resolveFeatureBinaries(values["install-dir"]);
   for (const arch of paths.dockerArchOptions) {
     await ensurePayload(component, version, arch, false);
   }
-  const context = await assembleBuildContext(component, version, installBinaries);
+  const context = await assembleBuildContext(component, version, featureBinaries);
   await login(prefix);
   const refs = imageRefs(prefix, component, tags);
   await pushImage(context, refs);

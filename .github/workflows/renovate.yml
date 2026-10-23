@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        feature: [dotnet, ripgrep]
+        feature: [dotnet, ripgrep, uv]
     steps:
       - name: Checkout (GitHub)
         uses: actions/checkout@v7

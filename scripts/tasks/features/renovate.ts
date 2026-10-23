@@ -7,6 +7,24 @@ import http from "isomorphic-git/http/node";
 import { getRemoteInfo } from "@/scripts/git.js";
 import { projectRoot } from "@/scripts/project.js";
 
+const textDecoder = new TextDecoder();
+
+const isNotFound = (error: unknown): boolean =>
+  typeof error === "object" && error !== null && (error as { code?: unknown }).code === "NotFoundError";
+
+// A path absent from HEAD (the config before its first commit) yields undefined so a refresh can diff against nothing.
+export const headFile = async (oid: string, filepath: string): Promise<string | undefined> => {
+  try {
+    const { blob } = await git.readBlob({ fs, dir: projectRoot, oid, filepath });
+    return textDecoder.decode(blob);
+  } catch (error) {
+    if (isNotFound(error)) {
+      return undefined;
+    }
+    throw error;
+  }
+};
+
 export interface RefreshOptions {
   branch: string;
   title: string;

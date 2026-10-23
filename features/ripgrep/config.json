@@ -1,5 +1,5 @@
 {
-  "revision": 1,
+  "revision": 2,
   "versions": {
     "15.2.0": {
       "aliases": ["15.2", "15", "latest"],

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
+    <AssemblyName>Feature</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>DevcontainerConfig.Dotnet.Feature</RootNamespace>
+    <ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NuGet.Versioning" />
+    <ProjectReference Include="../../Features/Features.csproj" />
+    <ProjectReference Include="../Options/Options.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <PublishAot>true</PublishAot>
+    <StaticExecutable>true</StaticExecutable>
+    <LinkerFlavor>lld</LinkerFlavor>
+  </PropertyGroup>
+</Project>
