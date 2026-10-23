@@ -1,0 +1,13 @@
+{
+  "id": "uv",
+  "name": "Uv",
+  "description": "Installs the uv Python package manager and pinned Python versions.",
+  "image": "ghcr.io/devcontainer-config/features/uv",
+  "options": {
+    "defaultPythonVersion": {
+      "type": "string",
+      "default": "",
+      "description": "Install the given Python version and link it as the default python and python3. A staged version installs from the image; any other version downloads when the container is created."
+    }
+  }
+}

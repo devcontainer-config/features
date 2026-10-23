@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
-    <AssemblyName>build</AssemblyName>
+    <AssemblyName>Build</AssemblyName>
     <OutputType>Exe</OutputType>
     <RootNamespace>DevcontainerConfig.Dotnet.Build</RootNamespace>
   </PropertyGroup>

@@ -1,6 +1,7 @@
+using DevcontainerConfig.Features;
 using NuGet.Versioning;
 
-namespace DevcontainerConfig.Dotnet.Install;
+namespace DevcontainerConfig.Dotnet.Feature;
 
 sealed record Source(string Component, string Name, NuGetVersion Version, string Path);
 
@@ -12,7 +13,7 @@ internal static class Scan
     {
         if (!Directory.Exists(stagedDir))
         {
-            throw new InstallException($"{stagedDir} is not a directory.");
+            throw new FeatureException($"{stagedDir} is not a directory.");
         }
 
         Dictionary<string, List<string>> versionDirs = [];
@@ -27,14 +28,14 @@ internal static class Scan
             List<string> dirs = [.. Directory.EnumerateDirectories(componentDir)];
             if (dirs.Count == 0)
             {
-                throw new InstallException($"{componentDir} has no version directory.");
+                throw new FeatureException($"{componentDir} has no version directory.");
             }
             versionDirs.Add(component, dirs);
         }
 
         if (versionDirs.Count == 0)
         {
-            throw new InstallException($"{stagedDir} has no component directory.");
+            throw new FeatureException($"{stagedDir} has no component directory.");
         }
 
         List<Source> sources = [];
@@ -50,13 +51,13 @@ internal static class Scan
                 string name = Path.GetFileName(dir);
                 if (!NuGetVersion.TryParse(name, out NuGetVersion? version))
                 {
-                    throw new InstallException($"{dir} is not a version.");
+                    throw new FeatureException($"{dir} is not a version.");
                 }
 
                 string muxer = Path.Join(dir, "dotnet");
                 if (!File.Exists(muxer))
                 {
-                    throw new InstallException($"{muxer} is missing.");
+                    throw new FeatureException($"{muxer} is missing.");
                 }
 
                 sources.Add(new Source(component, name, version, dir));

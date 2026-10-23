@@ -7,7 +7,7 @@ import { defaultRefPrefix, mainChannel } from "@/scripts/tasks/features/tags.js"
 import { assembleBuildContext } from "./buildContext.js";
 import { readConfig } from "./generateConfig.js";
 import { parseInvocation } from "./invocation.js";
-import { ensurePackBinary } from "./packBinary.js";
+import { ensureFeatureBinary } from "./packBinary.js";
 import { paths } from "./paths.js";
 import { imageRefs, tagNames } from "./tags.js";
 
@@ -33,7 +33,7 @@ const main = async (): Promise<void> => {
     );
   }
 
-  const install = await ensurePackBinary("install", paths.ridFor(arch), values.force);
+  const feature = await ensureFeatureBinary(paths.ridFor(arch), values.force);
   const payload = paths.payloadPath(component, version, arch);
   if (!(await paths.isFile(path.join(payload, "dotnet")))) {
     throw new Error(
@@ -41,7 +41,7 @@ const main = async (): Promise<void> => {
     );
   }
 
-  const context = await assembleBuildContext(component, version, { [arch]: install });
+  const context = await assembleBuildContext(component, version, { [arch]: feature });
   const config = await readConfig();
   const refs = [...imageRefs(prefix, component, tagNames(config, component, version, channel)), ...(values.tag ?? [])];
   await $$`docker buildx build ${[

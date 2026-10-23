@@ -18,6 +18,7 @@
     "globalconfig",
     "hasha",
     "mktemp",
+    "libc",
     "libicu",
     "msbuild",
     "NOLOGO",
@@ -27,6 +28,13 @@
     "unrs",
     "muxer",
     "tarball",
-    "optout"
+    "optout",
+    "cpython",
+    "dsse",
+    "sigstore",
+    "slsa",
+    "uvx",
+    "ndjson",
+    "venv"
   ]
 }

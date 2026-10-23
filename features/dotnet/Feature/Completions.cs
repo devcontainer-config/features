@@ -1,6 +1,7 @@
 using System.Diagnostics;
+using DevcontainerConfig.Features;
 
-namespace DevcontainerConfig.Dotnet.Install;
+namespace DevcontainerConfig.Dotnet.Feature;
 
 internal static class Completions
 {
@@ -28,7 +29,6 @@ internal static class Completions
                 string script = await RunAsync(root, temp, shell);
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                 File.WriteAllText(path, script);
-                File.SetUnixFileMode(path, Permissions.Mode0644);
                 Console.WriteLine($"install: wrote {path}");
             }
         }
@@ -65,7 +65,7 @@ internal static class Completions
         startInfo.Environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1";
 
         using Process process =
-            Process.Start(startInfo) ?? throw new InstallException($"cannot run {startInfo.FileName}.");
+            Process.Start(startInfo) ?? throw new FeatureException($"cannot run {startInfo.FileName}.");
         Task<string> output = process.StandardOutput.ReadToEndAsync();
         Task<string> error = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();
@@ -73,7 +73,7 @@ internal static class Completions
         string detail = (await error).Trim();
         if (process.ExitCode != 0)
         {
-            throw new InstallException(
+            throw new FeatureException(
                 $"dotnet completions script {shell} exited with code {process.ExitCode}"
                     + (detail.Length == 0 ? "." : $": {detail}")
             );

@@ -1,21 +1,23 @@
-import fs from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
 
-import git from "isomorphic-git";
-
 import { projectRoot } from "@/scripts/project.js";
-import { refresh } from "@/scripts/tasks/features/renovate.js";
+import { headFile, refresh } from "@/scripts/tasks/features/renovate.js";
 
 import type { Component, FeatureConfig } from "./generateConfig.js";
 import { components, configPath, generateConfig, parseConfig, readConfig } from "./generateConfig.js";
 
 const title = "Update dotnet version pins";
 const configFilepath = path.relative(projectRoot, configPath);
-const textDecoder = new TextDecoder();
 
-const versionPins = (previous: FeatureConfig, next: FeatureConfig): string[] =>
-  components.flatMap((component: Component) => {
+const versionPins = (previous: FeatureConfig | undefined, next: FeatureConfig): string[] => {
+  if (previous === undefined) {
+    return components.flatMap((component) => {
+      const versions = Object.keys(next.components[component].versions);
+      return versions.length === 0 ? [] : [`${component}: added ${versions.join(", ")}`];
+    });
+  }
+  return components.flatMap((component: Component) => {
     const before = Object.keys(previous.components[component].versions);
     const after = Object.keys(next.components[component].versions);
     const removed = before.filter((version) => !after.includes(version));
@@ -25,10 +27,11 @@ const versionPins = (previous: FeatureConfig, next: FeatureConfig): string[] =>
     }
     return [`${component}: ${removed.join(", ")} → ${added.join(", ")}`];
   });
+};
 
-const headConfig = async (oid: string): Promise<FeatureConfig> => {
-  const { blob } = await git.readBlob({ fs, dir: projectRoot, oid, filepath: configFilepath });
-  return parseConfig(textDecoder.decode(blob), `${configFilepath} at HEAD`);
+const headConfig = async (oid: string): Promise<FeatureConfig | undefined> => {
+  const text = await headFile(oid, configFilepath);
+  return text === undefined ? undefined : parseConfig(text, `${configFilepath} at HEAD`);
 };
 
 const main = async (): Promise<void> => {

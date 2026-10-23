@@ -1,14 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
-    <AssemblyName>install</AssemblyName>
+    <AssemblyName>Feature</AssemblyName>
     <OutputType>Exe</OutputType>
-    <RootNamespace>DevcontainerConfig.Dotnet.Install</RootNamespace>
+    <RootNamespace>DevcontainerConfig.Uv.Feature</RootNamespace>
     <ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NuGet.Versioning" />
     <ProjectReference Include="../../Features/Features.csproj" />
     <ProjectReference Include="../Options/Options.csproj" />
   </ItemGroup>

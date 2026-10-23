@@ -1,35 +1,51 @@
 #!/bin/sh
-set -e
+set -eu
 
-# spell-checker:ignore usermod NOPASSWD
+# spell-checker:ignore groupmod NOPASSWD usermod
 
-OLD_USER=$(id --user --name 1000)
-OLD_GROUP=$(id --group --name "${OLD_USER}")
-HOME=/home/${_REMOTE_USER}
-usermod --login "${_REMOTE_USER}" --home "${HOME}" --move-home "${OLD_USER}"
-groupmod --new-name "${_REMOTE_USER}" "${OLD_GROUP}"
+old_user=$(id --user --name 1000)
+old_group=$(id --group --name "${old_user}")
+new_user=${_REMOTE_USER}
+home=/home/${new_user}
 
-rm --force "/etc/sudoers.d/${OLD_USER}"
-echo "${_REMOTE_USER} ALL=(root) NOPASSWD:ALL" > "/etc/sudoers.d/${_REMOTE_USER}"
-chmod ug=r,o= "/etc/sudoers.d/${_REMOTE_USER}"
+usermod --login "${new_user}" --home "${home}" --move-home "${old_user}"
+groupmod --new-name "${new_user}" "${old_group}"
 
-# Ideally these folders would be in ${HOME}, but there's no way to mount volumes base on remoteUser.
+rm --force "/etc/sudoers.d/${old_user}"
+printf '%s ALL=(root) NOPASSWD:ALL\n' "${new_user}" > "/etc/sudoers.d/${new_user}"
+chmod ug=r,o= "/etc/sudoers.d/${new_user}"
+
+# Ideally these folders would be in ${HOME}, but there's no way to mount volumes based on remoteUser.
 # See https://github.com/devcontainers/spec/issues/220
-XDG_CONFIG_HOME_ROOT=/etc/devcontainer-config
-XDG_CACHE_HOME_ROOT=/var/cache/devcontainer-config
-XDG_DATA_HOME_ROOT=/usr/share/devcontainer-config
-XDG_STATE_HOME_ROOT=/var/lib/devcontainer-config
-mkdir --parents "${XDG_CONFIG_HOME_ROOT}" "${XDG_CACHE_HOME_ROOT}" "${XDG_DATA_HOME_ROOT}" "${XDG_STATE_HOME_ROOT}"
-chmod -R a+rwx "${XDG_CONFIG_HOME_ROOT}" "${XDG_CACHE_HOME_ROOT}" "${XDG_DATA_HOME_ROOT}" "${XDG_STATE_HOME_ROOT}"
+xdg_config_home_root=/etc/devcontainer-config
+xdg_cache_home_root=/var/cache/devcontainer-config
+xdg_data_home_root=/usr/share/devcontainer-config
+xdg_state_home_root=/var/lib/devcontainer-config
+xdg_bin_home_root=/usr/bin/devcontainer-config
+mkdir --parents \
+  "${xdg_config_home_root}" \
+  "${xdg_cache_home_root}" \
+  "${xdg_data_home_root}" \
+  "${xdg_state_home_root}" \
+  "${xdg_bin_home_root}"
+chmod --recursive a+rwx \
+  "${xdg_config_home_root}" \
+  "${xdg_cache_home_root}" \
+  "${xdg_data_home_root}" \
+  "${xdg_state_home_root}" \
+  "${xdg_bin_home_root}"
 
 cat > /etc/profile.d/00-xdg.sh << EOF
-XDG_CONFIG_HOME="${XDG_CONFIG_HOME_ROOT}/\$(id -un)"
-XDG_CACHE_HOME="${XDG_CACHE_HOME_ROOT}/\$(id -un)"
-XDG_DATA_HOME="${XDG_DATA_HOME_ROOT}/\$(id -un)"
-XDG_STATE_HOME="${XDG_STATE_HOME_ROOT}/\$(id -un)"
-export XDG_CONFIG_HOME XDG_CACHE_HOME XDG_DATA_HOME XDG_STATE_HOME
-mkdir -p "\$XDG_CONFIG_HOME" "\$XDG_CACHE_HOME" "\$XDG_DATA_HOME" "\$XDG_STATE_HOME"
+XDG_CONFIG_HOME="${xdg_config_home_root}/\$(id -un)"
+XDG_CACHE_HOME="${xdg_cache_home_root}/\$(id -un)"
+XDG_DATA_HOME="${xdg_data_home_root}/\$(id -un)"
+XDG_STATE_HOME="${xdg_state_home_root}/\$(id -un)"
+XDG_BIN_HOME="${xdg_bin_home_root}/\$(id -un)"
+export XDG_CONFIG_HOME XDG_CACHE_HOME XDG_DATA_HOME XDG_STATE_HOME XDG_BIN_HOME
+mkdir -p "\$XDG_CONFIG_HOME" "\$XDG_CACHE_HOME" "\$XDG_DATA_HOME" "\$XDG_STATE_HOME" "\$XDG_BIN_HOME"
+PATH="\$XDG_BIN_HOME:\$PATH"
+export PATH
 EOF
 chmod 0644 /etc/profile.d/00-xdg.sh
 
-chown --recursive "${_REMOTE_USER}:${_REMOTE_USER}" "${HOME}"
+chown --recursive "${new_user}:${new_user}" "${home}"

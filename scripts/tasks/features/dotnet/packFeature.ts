@@ -1,9 +1,11 @@
-import { copyFile, mkdir } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
 
+import { createTar } from "@/scripts/tasks/features/tar.js";
+
 import { rids } from "./generateConfig.js";
-import { ensurePackBinary } from "./packBinary.js";
+import { ensureFeatureBinary } from "./packBinary.js";
 
 const main = async (): Promise<void> => {
   const { values } = parseArgs({
@@ -21,11 +23,12 @@ const main = async (): Promise<void> => {
   if (values.out === undefined || values.out === "") {
     throw new Error("--out is required");
   }
-  const binary = await ensurePackBinary("install", rid, values.force);
-  const target = path.join(path.resolve(values.out), rid, "install");
-  await mkdir(path.dirname(target), { recursive: true });
-  await copyFile(binary, target);
-  console.log(`Install binary written to ${target}`);
+  const binary = await ensureFeatureBinary(rid, values.force);
+  const out = path.resolve(values.out);
+  const archive = path.join(out, `${rid}.tar`);
+  await mkdir(out, { recursive: true });
+  await createTar(archive, path.dirname(binary), [path.basename(binary)]);
+  console.log(`Feature binary archive written to ${archive}`);
 };
 
 if (import.meta.main) {

@@ -1,6 +1,6 @@
 using NuGet.Versioning;
 
-namespace DevcontainerConfig.Dotnet.Install;
+namespace DevcontainerConfig.Dotnet.Feature;
 
 internal static class Merge
 {

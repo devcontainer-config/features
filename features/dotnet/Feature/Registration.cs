@@ -1,4 +1,6 @@
-namespace DevcontainerConfig.Dotnet.Install;
+using DevcontainerConfig.Features;
+
+namespace DevcontainerConfig.Dotnet.Feature;
 
 internal static class Registration
 {
@@ -18,7 +20,6 @@ internal static class Registration
         Directory.CreateDirectory(LocationDir);
         string path = Path.Join(LocationDir, "install_location");
         File.WriteAllText(path, $"{root}\n");
-        File.SetUnixFileMode(path, Permissions.Mode0644);
         Console.WriteLine($"install: registered {root} in {path}");
     }
 
@@ -27,7 +28,7 @@ internal static class Registration
         string target = Path.Join(root, "dotnet");
         if (Directory.Exists(LinkPath))
         {
-            throw new InstallException($"{LinkPath} is a directory.");
+            throw new FeatureException($"{LinkPath} is a directory.");
         }
 
         // rename(2) replaces whatever else the path holds (absent, symlink or regular file) and never resolves the
@@ -60,7 +61,6 @@ internal static class Registration
             export PATH="$PATH:$DOTNET_CLI_HOME/.dotnet/tools"
             """
         );
-        File.SetUnixFileMode(path, Permissions.Mode0644);
         Console.WriteLine($"install: wrote {path}");
     }
 }
