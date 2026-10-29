@@ -4,9 +4,10 @@ import path, { posix } from "node:path";
 import { z } from "zod";
 
 import { projectRoot } from "@/scripts/project.js";
+import { claimedKey } from "@/scripts/tasks/features/config.js";
 import type { Component, FeatureConfig } from "@/scripts/tasks/features/dotnet/generateConfig.js";
 import { configPath, readConfig } from "@/scripts/tasks/features/dotnet/generateConfig.js";
-import { canonicalTag, imageRef } from "@/scripts/tasks/features/dotnet/tags.js";
+import { imageRef, tagNames } from "@/scripts/tasks/features/dotnet/tags.js";
 
 import { remoteUser } from "./lifecycle.js";
 
@@ -19,7 +20,7 @@ const userInitFeatureSchema = z.object({
 
 export interface ComponentImage {
   component: Component;
-  version: string;
+  key: string;
   ref: string;
 }
 
@@ -29,23 +30,14 @@ export interface Selection {
   globalPackagesPath: string;
 }
 
-const ltsVersion = (config: FeatureConfig, component: Component): string => {
-  const versions = config.components[component].versions;
-  const matches = Object.keys(versions).filter((version) => versions[version].aliases.includes("lts"));
-  if (matches.length !== 1) {
-    throw new Error(`${configPath}: component ${component} must have exactly one lts version, found ${matches.length}`);
-  }
-  return matches[0];
-};
-
 const componentImage = (
   config: FeatureConfig,
   component: Component,
   channel: string,
   prefix: string,
 ): ComponentImage => {
-  const version = ltsVersion(config, component);
-  return { component, version, ref: imageRef(prefix, component, canonicalTag(config, component, version, channel)) };
+  const key = claimedKey(config.components[component].aliases, "lts", `${configPath} component ${component}`);
+  return { component, key, ref: imageRef(prefix, component, tagNames(config, component, key, channel).canonical) };
 };
 
 const tfmOf = (sdkVersion: string): string => {
@@ -78,7 +70,7 @@ const derive = async (channel: string, prefix: string): Promise<Selection> => {
       runtime: componentImage(config, "runtime", channel, prefix),
       aspnet: componentImage(config, "aspnet", channel, prefix),
     },
-    tfm: tfmOf(sdk.version),
+    tfm: tfmOf(sdk.key),
     globalPackagesPath: await readGlobalPackagesPath(),
   };
 };

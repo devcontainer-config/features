@@ -1,7 +1,7 @@
 import { parseArgs } from "node:util";
 
 import { parseInvocation } from "./invocation.js";
-import { ensurePayload } from "./payload.js";
+import { ensurePayload, loadSection } from "./payload.js";
 
 const main = async (): Promise<void> => {
   const { values } = parseArgs({
@@ -13,8 +13,8 @@ const main = async (): Promise<void> => {
     },
   });
 
-  const { component, version, arch } = parseInvocation(values);
-  await ensurePayload(component, version, arch, values.force);
+  const { component, key, arch } = parseInvocation(values);
+  await ensurePayload(await loadSection(component, key), arch, values.force);
 };
 
 if (import.meta.main) {

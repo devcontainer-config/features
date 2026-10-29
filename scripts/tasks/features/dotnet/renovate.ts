@@ -2,37 +2,20 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 
 import { projectRoot } from "@/scripts/project.js";
-import { headFile, refresh } from "@/scripts/tasks/features/renovate.js";
+import type { ConfigDocument } from "@/scripts/tasks/features/renovate.js";
+import { refreshFeatureConfig } from "@/scripts/tasks/features/renovate.js";
 
-import type { Component, FeatureConfig } from "./generateConfig.js";
+import type { FeatureConfig } from "./generateConfig.js";
 import { components, configPath, generateConfig, parseConfig, readConfig } from "./generateConfig.js";
 
-const title = "Update dotnet version pins";
-const configFilepath = path.relative(projectRoot, configPath);
-
-const versionPins = (previous: FeatureConfig | undefined, next: FeatureConfig): string[] => {
-  if (previous === undefined) {
-    return components.flatMap((component) => {
-      const versions = Object.keys(next.components[component].versions);
-      return versions.length === 0 ? [] : [`${component}: added ${versions.join(", ")}`];
-    });
-  }
-  return components.flatMap((component: Component) => {
-    const before = Object.keys(previous.components[component].versions);
-    const after = Object.keys(next.components[component].versions);
-    const removed = before.filter((version) => !after.includes(version));
-    const added = after.filter((version) => !before.includes(version));
-    if (removed.length === 0 && added.length === 0) {
-      return [];
-    }
-    return [`${component}: ${removed.join(", ")} → ${added.join(", ")}`];
-  });
-};
-
-const headConfig = async (oid: string): Promise<FeatureConfig | undefined> => {
-  const text = await headFile(oid, configFilepath);
-  return text === undefined ? undefined : parseConfig(text, `${configFilepath} at HEAD`);
-};
+const document = (config: FeatureConfig): ConfigDocument => ({
+  revision: config.revision,
+  namespaces: components.map((component) => ({
+    name: component,
+    versions: config.components[component].versions,
+    aliases: config.components[component].aliases,
+  })),
+});
 
 const main = async (): Promise<void> => {
   const { values } = parseArgs({
@@ -41,13 +24,15 @@ const main = async (): Promise<void> => {
     },
   });
 
-  await generateConfig();
-  await refresh(
+  await refreshFeatureConfig(
     {
-      branch: "renovate",
-      title,
-      filepath: configFilepath,
-      body: async (headOid) => versionPins(await headConfig(headOid), await readConfig()).join("\n"),
+      branch: "renovate-dotnet",
+      title: "Update dotnet version pins",
+      filepath: path.relative(projectRoot, configPath),
+      generate: generateConfig,
+      read: readConfig,
+      parse: parseConfig,
+      document,
     },
     values["dry-run"],
   );

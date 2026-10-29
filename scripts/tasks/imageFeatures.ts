@@ -135,7 +135,10 @@ const render = async (manifest: Manifest, notes: string, readmePath: string): Pr
   const { owner, repo } = await getRemoteInfo();
   const url = `https://github.com/${owner}/${repo}/blob/main/features/${manifest.id}/feature.json`;
   const text = readmeTemplate
-    .replace("#{Name}", manifest.name === undefined ? manifest.id : `${manifest.name} (${manifest.id})`)
+    .replace(
+      "#{Name}",
+      manifest.name === manifest.id || manifest.name === undefined ? manifest.id : `${manifest.name} (${manifest.id})`,
+    )
     .replace("#{Description}", manifest.description)
     .replace("#{Image}", manifest.image)
     .replaceAll("#{Id}", manifest.id)

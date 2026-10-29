@@ -8,6 +8,7 @@ import { assembleBuildContext } from "./buildContext.js";
 import { readConfig } from "./generateConfig.js";
 import { parseInvocation } from "./invocation.js";
 import { paths } from "./paths.js";
+import { derive, loadSection, payloadPresent } from "./payload.js";
 import { imageRefs, tagNames } from "./tags.js";
 
 const main = async (): Promise<void> => {
@@ -16,11 +17,12 @@ const main = async (): Promise<void> => {
       version: { type: "string" },
       arch: { type: "string" },
       channel: { type: "string", default: mainChannel },
+      tag: { type: "string", multiple: true },
       prefix: { type: "string" },
     },
   });
 
-  const { version, arch } = parseInvocation(values);
+  const { key, arch } = parseInvocation(values);
   const channel = values.channel;
   const prefix = values.prefix ?? (await defaultRefPrefix());
   if (arch !== paths.hostArch()) {
@@ -29,16 +31,17 @@ const main = async (): Promise<void> => {
     );
   }
 
-  const payload = paths.payloadPath(version, arch);
-  if (!(await paths.isFile(path.join(payload, "rg")))) {
+  const section = await loadSection(key);
+  const payload = derive(section, arch);
+  if (!(await payloadPresent(payload))) {
     throw new Error(
-      `No payload at ${payload}; run scripts/tasks/features/ripgrep/fetchPayload.ts --version ${version} --arch ${arch} first`,
+      `No payload at ${payload.cache}; run scripts/tasks/features/ripgrep/fetchPayload.ts --version ${key} --arch ${arch} first`,
     );
   }
 
-  const context = await assembleBuildContext(version, [arch]);
+  const context = await assembleBuildContext(key, [arch]);
   const config = await readConfig();
-  const refs = imageRefs(prefix, tagNames(config, version, channel));
+  const refs = [...imageRefs(prefix, tagNames(config, key, channel).all), ...(values.tag ?? [])];
   await $$`docker buildx build ${[
     ...["--platform", `linux/${arch}`],
     "--load",

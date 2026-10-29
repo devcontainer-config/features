@@ -4,7 +4,7 @@ import path from "node:path";
 import { projectRoot } from "@/scripts/project.js";
 import { project$$ } from "@/scripts/shell.js";
 import { paths } from "@/scripts/tasks/features/uv/paths.js";
-import { pythonPayloadPaths } from "@/scripts/tasks/features/uv/payload.js";
+import { loadSection, pythonPayloadPaths } from "@/scripts/tasks/features/uv/payload.js";
 
 import type { Workspace } from "./lifecycle.js";
 import type { Selection } from "./selection.js";
@@ -18,13 +18,10 @@ const stageFeatures = async (workspace: Workspace): Promise<void> => {
 };
 
 const stageDownloadMirror = async (workspace: Workspace, selection: Selection, force: boolean): Promise<void> => {
-  const args = [
-    ...["--component", "python"],
-    ...["--version", selection.previous.version],
-    ...(force ? ["--force"] : []),
-  ];
+  const args = [...["--component", "python"], ...["--version", selection.previous.key], ...(force ? ["--force"] : [])];
   await project$$`tsx scripts/tasks/features/uv/fetchPayload.ts ${args}`;
-  const payload = await pythonPayloadPaths(selection.previous.version, paths.hostArch());
+  const section = await loadSection("python", selection.previous.key);
+  const payload = pythonPayloadPaths(section, paths.hostArch());
   const mirrorPath = path.join(workspace.path, "mirror", payload.build);
   await mkdir(mirrorPath, { recursive: true });
   await cp(payload.archive, path.join(mirrorPath, payload.name));

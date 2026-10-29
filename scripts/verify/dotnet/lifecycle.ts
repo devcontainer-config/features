@@ -80,14 +80,14 @@ export interface ProvisionOptions {
 }
 
 const provisionComponent = async (
-  { component, version, ref }: ComponentImage,
+  { component, key, ref }: ComponentImage,
   options: ProvisionOptions,
 ): Promise<void> => {
   if (options.images === "pull") {
     await project$$`docker pull ${ref}`;
     return;
   }
-  const args = [...["--component", component], ...["--version", version], ...(options.force ? ["--force"] : [])];
+  const args = [...["--component", component], ...["--version", key], ...(options.force ? ["--force"] : [])];
   await project$$`tsx scripts/tasks/features/dotnet/fetchPayload.ts ${args}`;
   await project$$`tsx scripts/tasks/features/dotnet/buildImage.ts ${[
     ...args,

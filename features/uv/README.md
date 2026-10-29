@@ -1,4 +1,4 @@
-# Uv (uv)
+# uv
 
 Installs the uv Python package manager and pinned Python versions.
 

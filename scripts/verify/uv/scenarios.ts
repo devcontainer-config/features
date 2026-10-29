@@ -74,41 +74,41 @@ const testImageOf = (name: ScenarioName, selection: Selection, variant?: string)
   }
   const image = variant === undefined ? name : `${name}-${variant}`;
   return {
-    tag: `${testImagePrefix}:${image}-${label.version}`,
+    tag: `${testImagePrefix}:${image}-${label.key}`,
     components,
     argNames: definitions[name].argNames,
     dockerfile: definitions[name].dockerfile,
   };
 };
 
-const minorOf = (version: string): string => {
-  const [major, minor] = version.split(".");
+const minorOf = (pythonVersion: string): string => {
+  const [major, minor] = pythonVersion.split(".");
   return `${major}.${minor}`;
 };
 
-const pythonKey = (selection: Selection, version: string): string =>
-  `cpython-${version}-linux-${selection.machine}-gnu`;
+const pythonKey = (selection: Selection, pythonVersion: string): string =>
+  `cpython-${pythonVersion}-linux-${selection.machine}-gnu`;
 
-const pythonPatchDir = (selection: Selection, version: string): string =>
-  `${selection.xdgDataPath}/uv/python/${pythonKey(selection, version)}`;
+const pythonPatchDir = (selection: Selection, pythonVersion: string): string =>
+  `${selection.xdgDataPath}/uv/python/${pythonKey(selection, pythonVersion)}`;
 
-const pythonMinorDir = (selection: Selection, version: string): string =>
-  `${selection.xdgDataPath}/uv/python/cpython-${minorOf(version)}-linux-${selection.machine}-gnu`;
+const pythonMinorDir = (selection: Selection, pythonVersion: string): string =>
+  `${selection.xdgDataPath}/uv/python/cpython-${minorOf(pythonVersion)}-linux-${selection.machine}-gnu`;
 
-const pythonExecutable = (selection: Selection, version: string): string =>
-  `${pythonPatchDir(selection, version)}/bin/python${minorOf(version)}`;
+const pythonExecutable = (selection: Selection, pythonVersion: string): string =>
+  `${pythonPatchDir(selection, pythonVersion)}/bin/python${minorOf(pythonVersion)}`;
 
-const pythonListLine = (selection: Selection, version: string): string =>
-  `${pythonKey(selection, version)}    ${pythonMinorDir(selection, version)}/bin/python${minorOf(version)}`;
+const pythonListLine = (selection: Selection, pythonVersion: string): string =>
+  `${pythonKey(selection, pythonVersion)}    ${pythonMinorDir(selection, pythonVersion)}/bin/python${minorOf(pythonVersion)}`;
 
 const linkTarget = (name: string, target: string): Exec => ({
   command: ["sh", "-c", `readlink -f "$XDG_BIN_HOME/${name}"`],
   expect: { stdout: [target] },
 });
 
-const linkVersion = (name: string, version: string): Exec => ({
+const linkVersion = (name: string, pythonVersion: string): Exec => ({
   command: ["sh", "-c", `"$XDG_BIN_HOME/${name}" -V`],
-  expect: { stdout: [`Python ${version}`] },
+  expect: { stdout: [`Python ${pythonVersion}`] },
 });
 
 const completionFiles = [
@@ -121,8 +121,8 @@ const completionFiles = [
 ];
 
 const binariesExecs = (selection: Selection): Exec[] => [
-  { command: ["uv", "--version"], expect: { stdout: [`uv ${selection.uv.version} (${selection.muslTriple})`] } },
-  { command: ["uvx", "--version"], expect: { stdout: [`uvx ${selection.uv.version} (${selection.muslTriple})`] } },
+  { command: ["uv", "--version"], expect: { stdout: [`uv ${selection.uv.key} (${selection.muslTriple})`] } },
+  { command: ["uvx", "--version"], expect: { stdout: [`uvx ${selection.uv.key} (${selection.muslTriple})`] } },
   {
     command: ["sh", "-c", "command -v uv; command -v uvx"],
     expect: { stdout: ["/usr/local/bin/uv", "/usr/local/bin/uvx"] },
@@ -135,38 +135,44 @@ const binariesExecs = (selection: Selection): Exec[] => [
 ];
 
 const pythonExecs = (selection: Selection): Exec[] => {
-  const { version } = selection.python;
+  const pythonVersion = selection.python.pythonVersion;
   return [
-    { command: ["cat", `${featureDir}/default-python`], expect: { stdout: [version] } },
-    { command: ["uv", "python", "list", "--only-installed"], expect: { stdout: [pythonListLine(selection, version)] } },
-    linkTarget("python", pythonExecutable(selection, version)),
-    linkTarget("python3", pythonExecutable(selection, version)),
-    linkTarget(`python${minorOf(version)}`, pythonExecutable(selection, version)),
-    linkVersion("python", version),
+    { command: ["cat", `${featureDir}/default-python`], expect: { stdout: [pythonVersion] } },
     {
-      command: ["uv", "run", "-q", "--no-project", "--python", version, "python", "-V"],
-      expect: { stdout: [`Python ${version}`] },
+      command: ["uv", "python", "list", "--only-installed"],
+      expect: { stdout: [pythonListLine(selection, pythonVersion)] },
     },
-    { command: ["uv", "venv", "-q", "--python", version], expect: { stdout: [] } },
-    { command: [".venv/bin/python", "-V"], expect: { stdout: [`Python ${version}`] } },
+    linkTarget("python", pythonExecutable(selection, pythonVersion)),
+    linkTarget("python3", pythonExecutable(selection, pythonVersion)),
+    linkTarget(`python${minorOf(pythonVersion)}`, pythonExecutable(selection, pythonVersion)),
+    linkVersion("python", pythonVersion),
+    {
+      command: ["uv", "run", "-q", "--no-project", "--python", pythonVersion, "python", "-V"],
+      expect: { stdout: [`Python ${pythonVersion}`] },
+    },
+    { command: ["uv", "venv", "-q", "--python", pythonVersion], expect: { stdout: [] } },
+    { command: [".venv/bin/python", "-V"], expect: { stdout: [`Python ${pythonVersion}`] } },
   ];
 };
 
 const pythonRestartExecs = (selection: Selection): Exec[] => {
-  const { version } = selection.python;
+  const pythonVersion = selection.python.pythonVersion;
   return [
-    { command: ["cat", `${featureDir}/default-python`], expect: { stdout: [version] } },
-    { command: ["uv", "python", "list", "--only-installed"], expect: { stdout: [pythonListLine(selection, version)] } },
-    linkTarget("python", pythonExecutable(selection, version)),
-    linkTarget("python3", pythonExecutable(selection, version)),
-    linkTarget(`python${minorOf(version)}`, pythonExecutable(selection, version)),
-    linkVersion("python", version),
+    { command: ["cat", `${featureDir}/default-python`], expect: { stdout: [pythonVersion] } },
+    {
+      command: ["uv", "python", "list", "--only-installed"],
+      expect: { stdout: [pythonListLine(selection, pythonVersion)] },
+    },
+    linkTarget("python", pythonExecutable(selection, pythonVersion)),
+    linkTarget("python3", pythonExecutable(selection, pythonVersion)),
+    linkTarget(`python${minorOf(pythonVersion)}`, pythonExecutable(selection, pythonVersion)),
+    linkVersion("python", pythonVersion),
   ];
 };
 
 const multiExecs = (selection: Selection): Exec[] => {
-  const latest = selection.python.version;
-  const previous = selection.previous.version;
+  const latest = selection.python.pythonVersion;
+  const previous = selection.previous.pythonVersion;
   return [
     {
       command: ["uv", "python", "list", "--only-installed"],
@@ -182,15 +188,18 @@ const multiExecs = (selection: Selection): Exec[] => {
 };
 
 const downloadExecs = (selection: Selection): Exec[] => {
-  const { version } = selection.previous;
+  const pythonVersion = selection.previous.pythonVersion;
   return [
-    { command: ["uv", "python", "list", "--only-installed"], expect: { stdout: [pythonListLine(selection, version)] } },
-    linkTarget("python", pythonExecutable(selection, version)),
-    linkTarget("python3", pythonExecutable(selection, version)),
-    linkVersion("python", version),
     {
-      command: ["uv", "run", "-q", "--no-project", "--python", version, "python", "-V"],
-      expect: { stdout: [`Python ${version}`] },
+      command: ["uv", "python", "list", "--only-installed"],
+      expect: { stdout: [pythonListLine(selection, pythonVersion)] },
+    },
+    linkTarget("python", pythonExecutable(selection, pythonVersion)),
+    linkTarget("python3", pythonExecutable(selection, pythonVersion)),
+    linkVersion("python", pythonVersion),
+    {
+      command: ["uv", "run", "-q", "--no-project", "--python", pythonVersion, "python", "-V"],
+      expect: { stdout: [`Python ${pythonVersion}`] },
     },
   ];
 };
@@ -236,7 +245,7 @@ const createScenario = async (name: ScenarioName, context: ScenarioContext): Pro
     }
     case "python": {
       const testImage = await optionsTestImage(name, selection, root, {
-        defaultPythonVersion: selection.python.version,
+        defaultPythonVersion: selection.python.pythonVersion,
       });
       return {
         name,
@@ -259,7 +268,7 @@ const createScenario = async (name: ScenarioName, context: ScenarioContext): Pro
       };
     case "download": {
       const testImage = await optionsTestImage(name, selection, root, {
-        defaultPythonVersion: minorOf(selection.previous.version),
+        defaultPythonVersion: minorOf(selection.previous.pythonVersion),
       });
       return {
         name,

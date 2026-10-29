@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import prettierOptions from "@/.config/prettier/.prettierrc.json" with { type: "json" };
 import { projectRoot } from "@/scripts/project.js";
+import { checkTagNamespace } from "@/scripts/tasks/features/config.js";
 
 import { verifyAttestation } from "./attestations.js";
 import type { DockerArch } from "./paths.js";
@@ -16,6 +17,7 @@ const pythonIndexUrl = "https://raw.githubusercontent.com/astral-sh/versions/mai
 const uvSlug = "astral-sh/uv";
 const pythonSlug = "astral-sh/python-build-standalone";
 const stablePattern = /^\d+\.\d+\.\d+$/u;
+const buildPattern = /^\d+$/u;
 
 export const configPath = path.resolve(projectRoot, "features/uv/config.json");
 
@@ -38,26 +40,37 @@ const indexReleaseSchema = z.object({
   artifacts: z.array(indexArtifactSchema),
 });
 
-const artifactSchema = z.object({ url: z.string(), sha256: z.string() });
+const artifactSchema = z.strictObject({ url: z.string(), sha256: z.string() });
 
-const uvVersionSchema = z.object({
-  aliases: z.array(z.string()),
+const uvVersionSchema = z.strictObject({
   "linux-x64": artifactSchema,
   "linux-arm64": artifactSchema,
 });
 
-const pythonVersionSchema = z.object({
-  aliases: z.array(z.string()),
+const pythonVersionSchema = z.strictObject({
+  pythonVersion: z.string(),
   build: z.string(),
   "linux-x64": artifactSchema,
   "linux-arm64": artifactSchema,
 });
 
-export const featureConfigSchema = z.object({
+const aliasTableSchema = z.record(z.string(), z.array(z.string()));
+
+const uvComponentSchema = z.strictObject({
+  versions: z.record(z.string(), uvVersionSchema),
+  aliases: aliasTableSchema,
+});
+
+const pythonComponentSchema = z.strictObject({
+  versions: z.record(z.string(), pythonVersionSchema),
+  aliases: aliasTableSchema,
+});
+
+export const featureConfigSchema = z.strictObject({
   revision: z.number(),
-  components: z.object({
-    uv: z.object({ versions: z.record(z.string(), uvVersionSchema) }),
-    python: z.object({ versions: z.record(z.string(), pythonVersionSchema) }),
+  components: z.strictObject({
+    uv: uvComponentSchema,
+    python: pythonComponentSchema,
   }),
 });
 
@@ -124,17 +137,9 @@ const trackedUvRelease = (releases: readonly IndexRelease[]): IndexRelease => {
   return release;
 };
 
-const uvVersionEntry = async (release: IndexRelease): Promise<UvVersion> => {
-  const [major, minor] = release.version.split(".");
-  return {
-    aliases: [`${major}.${minor}`, "latest"],
-    ...(await resolveArtifacts(uvSlug, release.version, release.artifacts, paths.muslTriples, "default")),
-  };
-};
-
 const pythonReleaseParts = (release: IndexRelease): { version: string; build: string } => {
   const [version, build, ...rest] = release.version.split("+");
-  if (version === undefined || build === undefined || rest.length > 0 || !/^\d+$/u.test(build)) {
+  if (version === undefined || build === undefined || rest.length > 0 || !buildPattern.test(build)) {
     throw new Error(`Version index entry ${release.version} is not <version>+<build>`);
   }
   return { version, build };
@@ -169,26 +174,53 @@ const compareVersions = (left: string, right: string): number => {
   return 0;
 };
 
-const pythonVersions = async (releases: readonly IndexRelease[]): Promise<Record<string, PythonVersion>> => {
+const pythonVersions = async (releases: readonly IndexRelease[]): Promise<Components["python"]> => {
   const { build, entries } = trackedPythonReleases(releases);
   const resolved = await Promise.all(
     entries.map(async (release) => {
       const { version } = pythonReleaseParts(release);
       const [major, minor] = version.split(".");
+      const key = `${version}-${build}`;
       const entry: PythonVersion = {
-        aliases: [`${major}.${minor}`],
+        pythonVersion: version,
         build,
         ...(await resolveArtifacts(pythonSlug, version, release.artifacts, paths.gnuTriples, "install_only_stripped")),
       };
-      return [version, entry] as const;
+      return { key, version, aliases: [`${major}.${minor}`, version], entry } as const;
     }),
   );
-  resolved.sort(([left], [right]) => compareVersions(left, right));
+  resolved.sort((left, right) => compareVersions(left.version, right.version));
   const versions: Record<string, PythonVersion> = {};
-  resolved.forEach(([version, entry], index) => {
-    versions[version] = index === resolved.length - 1 ? { ...entry, aliases: [...entry.aliases, "latest"] } : entry;
-  });
-  return versions;
+  const aliases: Record<string, string[]> = {};
+  for (const [index, { key, aliases: row, entry }] of resolved.entries()) {
+    versions[key] = entry;
+    aliases[key] = index === resolved.length - 1 ? [...row, "latest"] : [...row];
+  }
+  return { versions, aliases };
+};
+
+type Components = FeatureConfig["components"];
+
+const validatePython = (config: FeatureConfig, source: string): void => {
+  for (const [key, entry] of Object.entries(config.components.python.versions)) {
+    const expected = `${entry.pythonVersion}-${entry.build}`;
+    if (key !== expected) {
+      throw new Error(`${source}: python version key ${key} is not <pythonVersion>-<build> (${expected})`);
+    }
+  }
+};
+
+const validateConfig = (config: FeatureConfig, source: string): void => {
+  for (const component of components) {
+    checkTagNamespace({
+      source: `${source} component ${component}`,
+      revision: config.revision,
+      versions: config.components[component].versions,
+      aliases: config.components[component].aliases,
+      requiredClaims: ["latest"],
+    });
+  }
+  validatePython(config, `${source} component python`);
 };
 
 export const parseConfig = (text: string, source: string): FeatureConfig => {
@@ -196,6 +228,7 @@ export const parseConfig = (text: string, source: string): FeatureConfig => {
   if (!result.success) {
     throw new Error(`${source}: ${z.prettifyError(result.error)}`);
   }
+  validateConfig(result.data, source);
   return result.data;
 };
 
@@ -216,13 +249,26 @@ const readRevision = async (): Promise<number> => {
 export const generateConfig = async (): Promise<void> => {
   const uvRelease = trackedUvRelease(parseIndex(await fetchText(uvIndexUrl), uvIndexUrl));
   const pythonReleases = parseIndex(await fetchText(pythonIndexUrl), pythonIndexUrl);
+  const [major, minor] = uvRelease.version.split(".");
   const config: FeatureConfig = {
     revision: await readRevision(),
     components: {
-      uv: { versions: { [uvRelease.version]: await uvVersionEntry(uvRelease) } },
-      python: { versions: await pythonVersions(pythonReleases) },
+      uv: {
+        versions: {
+          [uvRelease.version]: await resolveArtifacts(
+            uvSlug,
+            uvRelease.version,
+            uvRelease.artifacts,
+            paths.muslTriples,
+            "default",
+          ),
+        },
+        aliases: { [uvRelease.version]: [`${major}.${minor}`, "latest"] },
+      },
+      python: await pythonVersions(pythonReleases),
     },
   };
+  validateConfig(config, configPath);
   await writeFile(
     configPath,
     await prettier.format(JSON.stringify(config), { ...prettierOptions, filepath: configPath }),

@@ -1,22 +1,19 @@
-import type { TagSource } from "@/scripts/tasks/features/tags.js";
-import { canonicalTag as baseCanonicalTag, tagNames as baseTagNames } from "@/scripts/tasks/features/tags.js";
+import type { TagSet, TagSource } from "@/scripts/tasks/features/tags.js";
+import { tagNames as baseTagNames } from "@/scripts/tasks/features/tags.js";
 
 import type { FeatureConfig } from "./generateConfig.js";
 
-const sourceOf = (config: FeatureConfig, version: string): TagSource => {
-  const entry = config.versions[version];
+const sourceOf = (config: FeatureConfig, key: string): TagSource => {
+  const entry = config.versions[key];
   if (entry === undefined) {
     const available = Object.keys(config.versions).join(", ");
-    throw new Error(`Version ${version} is not tracked (available: ${available})`);
+    throw new Error(`Version ${key} is not tracked (available: ${available})`);
   }
-  return { version, revision: config.revision, aliases: entry.aliases };
+  return { key, revision: config.revision, aliases: config.aliases[key] };
 };
 
-export const tagNames = (config: FeatureConfig, version: string, channel: string): string[] =>
-  baseTagNames(sourceOf(config, version), channel);
-
-export const canonicalTag = (config: FeatureConfig, version: string, channel: string): string =>
-  baseCanonicalTag(sourceOf(config, version), channel);
+export const tagNames = (config: FeatureConfig, key: string, channel: string): TagSet =>
+  baseTagNames(sourceOf(config, key), channel);
 
 export const imageRef = (prefix: string, tag: string): string => `${prefix}/ripgrep:${tag}`;
 

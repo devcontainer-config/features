@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import prettierOptions from "@/.config/prettier/.prettierrc.json" with { type: "json" };
 import { projectRoot } from "@/scripts/project.js";
+import { checkTagNamespace } from "@/scripts/tasks/features/config.js";
 
 const releasesUrl = "https://api.github.com/repos/BurntSushi/ripgrep/releases";
 export const configPath = path.resolve(projectRoot, "features/ripgrep/config.json");
@@ -34,15 +35,17 @@ const releasesPageSchema = z.array(releaseSchema);
 
 const artifactSchema = z.object({ url: z.string(), sha256: z.string() });
 
-const versionEntrySchema = z.object({
-  aliases: z.array(z.string()),
+const versionEntrySchema = z.strictObject({
   "x86_64-unknown-linux-musl": artifactSchema,
   "aarch64-unknown-linux-musl": artifactSchema,
 });
 
-export const featureConfigSchema = z.object({
+const aliasTableSchema = z.record(z.string(), z.array(z.string()));
+
+export const featureConfigSchema = z.strictObject({
   revision: z.number(),
   versions: z.record(z.string(), versionEntrySchema),
+  aliases: aliasTableSchema,
 });
 
 export type Release = z.infer<typeof releaseSchema>;
@@ -124,13 +127,24 @@ const resolveArtifact = (candidate: Candidate, target: Target): Artifact => {
   return { url: asset.browser_download_url, sha256: match[1] };
 };
 
-const versionEntry = (candidate: Candidate): VersionEntry => {
+const versionEntry = (candidate: Candidate): VersionEntry => ({
+  "x86_64-unknown-linux-musl": resolveArtifact(candidate, "x86_64-unknown-linux-musl"),
+  "aarch64-unknown-linux-musl": resolveArtifact(candidate, "aarch64-unknown-linux-musl"),
+});
+
+const versionAliases = (candidate: Candidate): string[] => {
   const [major, minor] = candidate.number;
-  return {
-    aliases: [`${major}.${minor}`, `${major}`, "latest"],
-    "x86_64-unknown-linux-musl": resolveArtifact(candidate, "x86_64-unknown-linux-musl"),
-    "aarch64-unknown-linux-musl": resolveArtifact(candidate, "aarch64-unknown-linux-musl"),
-  };
+  return [`${major}.${minor}`, `${major}`, "latest"];
+};
+
+const validateConfig = (config: FeatureConfig, source: string): void => {
+  checkTagNamespace({
+    source,
+    revision: config.revision,
+    versions: config.versions,
+    aliases: config.aliases,
+    requiredClaims: ["latest"],
+  });
 };
 
 export const parseConfig = (text: string, source: string): FeatureConfig => {
@@ -138,6 +152,7 @@ export const parseConfig = (text: string, source: string): FeatureConfig => {
   if (!result.success) {
     throw new Error(`${source}: ${z.prettifyError(result.error)}`);
   }
+  validateConfig(result.data, source);
   return result.data;
 };
 
@@ -160,7 +175,9 @@ export const generateConfig = async (): Promise<void> => {
   const config: FeatureConfig = {
     revision: await readRevision(),
     versions: { [candidate.tag]: versionEntry(candidate) },
+    aliases: { [candidate.tag]: versionAliases(candidate) },
   };
+  validateConfig(config, configPath);
   await writeFile(
     configPath,
     await prettier.format(JSON.stringify(config), { ...prettierOptions, filepath: configPath }),

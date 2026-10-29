@@ -78,14 +78,14 @@ export interface ProvisionOptions {
 }
 
 const provisionComponent = async (
-  { component, version, ref }: ComponentImage,
+  { component, key, ref }: ComponentImage,
   options: ProvisionOptions,
 ): Promise<void> => {
   if (options.images === "pull") {
     await project$$`docker pull ${ref}`;
     return;
   }
-  const args = [...["--component", component], ...["--version", version], ...(options.force ? ["--force"] : [])];
+  const args = [...["--component", component], ...["--version", key], ...(options.force ? ["--force"] : [])];
   await project$$`tsx scripts/tasks/features/uv/fetchPayload.ts ${args}`;
   await project$$`tsx scripts/tasks/features/uv/buildImage.ts ${[
     ...args,
@@ -100,7 +100,7 @@ const provision = async (components: readonly ComponentImage[], options: Provisi
   }
   const unique = new Map<string, ComponentImage>();
   for (const component of components) {
-    unique.set(`${component.component}:${component.version}`, component);
+    unique.set(`${component.component}:${component.key}`, component);
   }
   for (const component of unique.values()) {
     await provisionComponent(component, options);

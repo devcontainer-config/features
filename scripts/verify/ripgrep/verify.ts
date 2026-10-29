@@ -72,17 +72,17 @@ export const verify = async (argv: string[]): Promise<void> => {
   const channel = values.channel;
   const prefix = values.prefix ?? (await defaultRefPrefix());
   const derived = await selection.derive(channel, prefix);
-  console.log(`>>> verify ripgrep: selection version=${derived.version} ref=${derived.ref}`);
+  console.log(`>>> verify ripgrep: selection version=${derived.key} ref=${derived.ref}`);
 
   const tempPath = await mkdtempDisposable(path.join(tmpdir(), "devcontainer-verify-ripgrep-"));
   const workspace = lifecycle.workspaceAt(tempPath.path, "default");
-  const testImage = `${testImagePrefix}:${derived.version}`;
+  const testImage = `${testImagePrefix}:${derived.key}`;
 
   try {
     console.log(">>> verify ripgrep: provision");
     await lifecycle.provision({
       images,
-      version: derived.version,
+      key: derived.key,
       ref: derived.ref,
       channel,
       prefix,
@@ -90,7 +90,7 @@ export const verify = async (argv: string[]): Promise<void> => {
     });
 
     console.log(">>> verify ripgrep: test image");
-    await lifecycle.buildTestImage(path.join(tempPath.path, "ctx"), derived.version, derived.ref);
+    await lifecycle.buildTestImage(path.join(tempPath.path, "ctx"), derived.key, derived.ref);
 
     console.log(">>> verify ripgrep: workspace");
     await lifecycle.createWorkspace(workspace, { image: testImage });
@@ -99,7 +99,7 @@ export const verify = async (argv: string[]): Promise<void> => {
     console.log(">>> verify ripgrep: scenario default");
     await lifecycle.buildContainer(workspace);
     await lifecycle.startContainer(workspace);
-    for (const exec of defaultExecs(derived.version)) {
+    for (const exec of defaultExecs(derived.key)) {
       assertions.exec(await lifecycle.execInContainer(workspace, exec), exec.expect);
     }
   } finally {

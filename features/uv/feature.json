@@ -1,6 +1,6 @@
 {
   "id": "uv",
-  "name": "Uv",
+  "name": "uv",
   "description": "Installs the uv Python package manager and pinned Python versions.",
   "image": "ghcr.io/devcontainer-config/features/uv",
   "options": {

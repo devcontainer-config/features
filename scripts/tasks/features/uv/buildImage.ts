@@ -10,7 +10,7 @@ import { parseInvocation } from "./invocation.js";
 import { ensureFeatureBinary } from "./packBinary.js";
 import type { DockerArch } from "./paths.js";
 import { paths } from "./paths.js";
-import { payloadPresent } from "./payload.js";
+import { derive, payloadPresent, sectionOf } from "./payload.js";
 import { imageRefs, tagNames } from "./tags.js";
 
 const main = async (): Promise<void> => {
@@ -26,7 +26,7 @@ const main = async (): Promise<void> => {
     },
   });
 
-  const { component, version, arch } = parseInvocation(values);
+  const { component, key, arch } = parseInvocation(values);
   const channel = values.channel;
   const prefix = values.prefix ?? (await defaultRefPrefix());
   if (arch !== paths.hostArch()) {
@@ -39,15 +39,17 @@ const main = async (): Promise<void> => {
   if (component === "uv") {
     featureBinaries[arch] = await ensureFeatureBinary(paths.ridFor(arch), values.force);
   }
-  if (!(await payloadPresent(component, version, arch))) {
+  const config = await readConfig();
+  const payload = derive(sectionOf(config, component, key), arch);
+  if (!(await payloadPresent(payload))) {
     throw new Error(
-      `No payload at ${paths.payloadPath(component, version, arch)}; run scripts/tasks/features/uv/fetchPayload.ts --component ${component} --version ${version} --arch ${arch} first`,
+      `No payload at ${payload.cache}; run scripts/tasks/features/uv/fetchPayload.ts --component ${component} --version ${key} --arch ${arch} first`,
     );
   }
 
-  const context = await assembleBuildContext(component, version, [arch], featureBinaries);
-  const config = await readConfig();
-  const refs = [...imageRefs(prefix, component, tagNames(config, component, version, channel)), ...(values.tag ?? [])];
+  const context = await assembleBuildContext(component, key, [arch], featureBinaries);
+  const tags = tagNames(config, component, key, channel);
+  const refs = [...imageRefs(prefix, component, tags.all), ...(values.tag ?? [])];
   await $$`docker buildx build ${[
     ...["--platform", `linux/${arch}`],
     "--load",

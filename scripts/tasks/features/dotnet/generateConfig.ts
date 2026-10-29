@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import prettierOptions from "@/.config/prettier/.prettierrc.json" with { type: "json" };
 import { projectRoot } from "@/scripts/project.js";
+import { checkTagNamespace } from "@/scripts/tasks/features/config.js";
 
 const releasesIndexUrl = "https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json";
 export const configPath = path.resolve(projectRoot, "features/dotnet/config.json");
@@ -69,17 +70,25 @@ type FeedReleases = z.infer<typeof feedReleasesSchema>;
 
 const artifactSchema = z.object({ url: z.string(), sha512: z.string() });
 
-const componentVersionSchema = z.object({
-  aliases: z.array(z.string()),
+const componentVersionSchema = z.strictObject({
   "linux-x64": artifactSchema,
   "linux-arm64": artifactSchema,
 });
 
-const componentConfigSchema = z.object({ versions: z.record(z.string(), componentVersionSchema) });
+const aliasTableSchema = z.record(z.string(), z.array(z.string()));
 
-export const featureConfigSchema = z.object({
+const componentConfigSchema = z.strictObject({
+  versions: z.record(z.string(), componentVersionSchema),
+  aliases: aliasTableSchema,
+});
+
+export const featureConfigSchema = z.strictObject({
   revision: z.number(),
-  components: z.record(z.enum(components), componentConfigSchema),
+  components: z.strictObject({
+    sdk: componentConfigSchema,
+    runtime: componentConfigSchema,
+    aspnet: componentConfigSchema,
+  }),
 });
 
 export type Artifact = z.infer<typeof artifactSchema>;
@@ -146,40 +155,57 @@ const majorVersion = (channel: FeedChannel): string => {
   return major;
 };
 
-const resolveVersions = (
-  component: Component,
-  channelData: readonly ChannelData[],
-): Record<string, ComponentVersion> => {
+interface ComponentData {
+  versions: Record<string, ComponentVersion>;
+  aliases: Record<string, string[]>;
+}
+
+const resolveComponentData = (component: Component, channelData: readonly ChannelData[]): ComponentData => {
   const feedKey = componentFeedKeys[component];
   const latestChannel = channelData.find((entry) => entry.channel["support-phase"] === "active");
   const ltsChannel = channelData.find(
     (entry) => entry.channel["release-type"] === "lts" && entry.channel["support-phase"] === "active",
   );
   const versions: Record<string, ComponentVersion> = {};
+  const aliases: Record<string, string[]> = {};
   for (const entry of channelData) {
     const { channel } = entry;
     const expected = component === "sdk" ? channel["latest-sdk"] : channel["latest-runtime"];
     const feedComponent = resolveComponent(entry.releases, feedKey, expected);
     const version = feedComponent.version;
-    if (version in versions) {
+    if (Object.hasOwn(versions, version)) {
       throw new Error(`Component ${component}: version ${version} resolved from more than one channel`);
     }
     const major = majorVersion(channel);
-    let aliases: string[];
+    const claims: string[] = [];
     if (channel["support-phase"] === "preview" || channel["support-phase"] === "go-live") {
-      aliases = ["preview", `${major}-preview`, `${channel["channel-version"]}-preview`];
+      claims.push("preview", `${major}-preview`, `${channel["channel-version"]}-preview`);
     } else {
-      aliases = [channel["channel-version"], major];
+      claims.push(channel["channel-version"], major);
       if (ltsChannel === entry) {
-        aliases.push("lts");
+        claims.push("lts");
       }
       if (latestChannel === entry) {
-        aliases.push("latest");
+        claims.push("latest");
       }
     }
-    versions[version] = { aliases, ...resolveArtifacts(component, version, feedComponent.files) };
+    versions[version] = resolveArtifacts(component, version, feedComponent.files);
+    aliases[version] = claims;
   }
-  return versions;
+  return { versions, aliases };
+};
+
+const validateConfig = (config: FeatureConfig, source: string): void => {
+  for (const component of components) {
+    const { versions, aliases } = config.components[component];
+    checkTagNamespace({
+      source: `${source} component ${component}`,
+      revision: config.revision,
+      versions,
+      aliases,
+      requiredClaims: ["latest", "lts"],
+    });
+  }
 };
 
 export const parseConfig = (text: string, source: string): FeatureConfig => {
@@ -187,6 +213,7 @@ export const parseConfig = (text: string, source: string): FeatureConfig => {
   if (!result.success) {
     throw new Error(`${source}: ${z.prettifyError(result.error)}`);
   }
+  validateConfig(result.data, source);
   return result.data;
 };
 
@@ -210,11 +237,12 @@ export const generateConfig = async (): Promise<void> => {
   const config: FeatureConfig = {
     revision: await readRevision(),
     components: {
-      sdk: { versions: resolveVersions("sdk", channelData) },
-      runtime: { versions: resolveVersions("runtime", channelData) },
-      aspnet: { versions: resolveVersions("aspnet", channelData) },
+      sdk: resolveComponentData("sdk", channelData),
+      runtime: resolveComponentData("runtime", channelData),
+      aspnet: resolveComponentData("aspnet", channelData),
     },
   };
+  validateConfig(config, configPath);
   await writeFile(
     configPath,
     await prettier.format(JSON.stringify(config), { ...prettierOptions, filepath: configPath }),

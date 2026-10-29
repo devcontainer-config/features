@@ -69,23 +69,21 @@ jobs:
         with:
           cacheFrom: ghcr.io/${{ github.repository }}/devcontainer
           push: never
-          runCmd: pnpm tsx scripts/tasks/features/ripgrep/publishImage.ts --version ${{ matrix.version }} --channel "$CHANNEL"
+          runCmd: pnpm tsx scripts/tasks/features/ripgrep/publishImage.ts --version ${{ matrix.key }} --channel "$CHANNEL"
           env: |
             CHANNEL=${{ github.head_ref || github.ref_name }}
             GH_TOKEN=${{ github.token }}
 
-  commit-tags:
+  release-tags:
     needs:
       - plan
       - image
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.plan.result == 'success' && needs.image.result == 'success' && needs.plan.outputs.matrix != ''
+      - verify
+    if: ${{ !cancelled() && needs.plan.result == 'success' && (needs.image.result == 'success' || needs.image.result == 'skipped') && needs.verify.result == 'success' }}
     permissions:
       contents: write
-      packages: read
+      packages: write
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     steps:
       - name: Checkout (GitHub)
         uses: actions/checkout@v7
@@ -97,13 +95,14 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ github.token }}
 
-      - name: Tag the published version
+      - name: Apply the release tags
         uses: devcontainers/ci@v0.3
         with:
           cacheFrom: ghcr.io/${{ github.repository }}/devcontainer
           push: never
-          runCmd: pnpm tsx scripts/tasks/features/ripgrep/tagPublished.ts --version ${{ matrix.version }}
+          runCmd: pnpm tsx scripts/tasks/features/ripgrep/releaseTags.ts --channel "$CHANNEL" ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && '--git-tags' || '' }}
           env: |
+            CHANNEL=${{ github.head_ref || github.ref_name }}
             GH_TOKEN=${{ github.token }}
 
   verify:
@@ -111,7 +110,13 @@ jobs:
       - plan
       - image
     if: ${{ !cancelled() && needs.plan.result == 'success' && (needs.image.result == 'success' || needs.image.result == 'skipped') }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
     steps:
       - name: Checkout (GitHub)
         uses: actions/checkout@v7

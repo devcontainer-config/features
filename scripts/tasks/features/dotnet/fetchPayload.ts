@@ -13,8 +13,8 @@ const main = async (): Promise<void> => {
     },
   });
 
-  const { component, version, arch } = parseInvocation(values);
-  await ensurePayload(component, version, arch, values.force);
+  const { component, key, arch } = parseInvocation(values);
+  await ensurePayload(component, key, arch, values.force);
 };
 
 if (import.meta.main) {

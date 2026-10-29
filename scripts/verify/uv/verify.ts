@@ -37,7 +37,7 @@ export const verify = async (argv: string[]): Promise<void> => {
   const selected = scenarios.select(values.scenario ?? []);
   const derived = await selection.derive(channel, prefix);
   console.log(
-    `>>> verify uv: selection uv=${derived.uv.version} python=${derived.python.version} previous=${derived.previous.version}`,
+    `>>> verify uv: selection uv=${derived.uv.key} python=${derived.python.key} previous=${derived.previous.key}`,
   );
 
   const tempPath = await mkdtempDisposable(path.join(tmpdir(), "devcontainer-verify-uv-"));
