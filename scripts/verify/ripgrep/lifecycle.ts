@@ -56,7 +56,7 @@ export type ImagesMode = (typeof imagesModes)[number];
 
 export interface ProvisionOptions {
   images: ImagesMode;
-  version: string;
+  key: string;
   ref: string;
   channel: string;
   prefix: string;
@@ -69,11 +69,11 @@ const provision = async (options: ProvisionOptions): Promise<void> => {
     await project$$`docker pull ${options.ref}`;
   } else {
     await project$$`tsx scripts/tasks/features/ripgrep/fetchPayload.ts ${[
-      ...["--version", options.version],
+      ...["--version", options.key],
       ...(options.force ? ["--force"] : []),
     ]}`;
     await project$$`tsx scripts/tasks/features/ripgrep/buildImage.ts ${[
-      ...["--version", options.version],
+      ...["--version", options.key],
       ...["--channel", options.channel],
       ...["--prefix", options.prefix],
     ]}`;
@@ -84,12 +84,12 @@ const provision = async (options: ProvisionOptions): Promise<void> => {
   }
 };
 
-const buildTestImage = async (ctxPath: string, version: string, ref: string): Promise<void> => {
+const buildTestImage = async (ctxPath: string, key: string, ref: string): Promise<void> => {
   await mkdir(ctxPath, { recursive: true });
   await project$$`docker buildx build ${[
     "--network=none",
     "--load",
-    ...["--tag", `${testImagePrefix}:${version}`],
+    ...["--tag", `${testImagePrefix}:${key}`],
     ...["--file", path.join(import.meta.dirname, "test-image.Dockerfile")],
     ...["--build-arg", `RIPGREP_IMAGE_REF=${ref}`],
     ctxPath,

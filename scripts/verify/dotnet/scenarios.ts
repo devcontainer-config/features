@@ -160,7 +160,7 @@ const sdkVariants: readonly ScenarioVariantDefinition[] = [
 
 const sdkBehavior = ({ selection, workspace }: ScenarioContext): ScenarioBehavior => ({
   execs: [
-    { command: ["dotnet", "--version"], expect: { stdout: [selection.components.sdk.version] } },
+    { command: ["dotnet", "--version"], expect: { stdout: [selection.components.sdk.key] } },
     { command: ["dotnet", "run", "--file", "hello.cs"], expect: { stdout: ["file-based-ok"] } },
     {
       command: [
@@ -225,14 +225,14 @@ const multiBehavior = ({ selection }: ScenarioContext): ScenarioBehavior => ({
   execs: [
     {
       command: ["dotnet", "--list-sdks"],
-      expect: { stdout: [`${selection.components.sdk.version} [/opt/dotnet/sdk]`] },
+      expect: { stdout: [`${selection.components.sdk.key} [/opt/dotnet/sdk]`] },
     },
     {
       command: ["dotnet", "--list-runtimes"],
       expect: {
         stdout: [
-          `Microsoft.AspNetCore.App ${selection.components.aspnet.version} [/opt/dotnet/shared/Microsoft.AspNetCore.App]`,
-          `Microsoft.NETCore.App ${selection.components.runtime.version} [/opt/dotnet/shared/Microsoft.NETCore.App]`,
+          `Microsoft.AspNetCore.App ${selection.components.aspnet.key} [/opt/dotnet/shared/Microsoft.AspNetCore.App]`,
+          `Microsoft.NETCore.App ${selection.components.runtime.key} [/opt/dotnet/shared/Microsoft.NETCore.App]`,
         ],
         sorted: true,
       },
@@ -256,7 +256,7 @@ const testImageOf = (name: ScenarioName, selection: Selection, variant?: string)
     throw new Error(`Scenario ${name} declares no components`);
   }
   const image = variant === undefined ? name : `${name}-${variant}`;
-  return { tag: `${testImagePrefix}:${image}-${label.version}`, components };
+  return { tag: `${testImagePrefix}:${image}-${label.key}`, components };
 };
 
 const materializeVariant = (

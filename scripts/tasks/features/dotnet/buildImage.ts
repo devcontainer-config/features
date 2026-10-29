@@ -24,7 +24,7 @@ const main = async (): Promise<void> => {
     },
   });
 
-  const { component, version, arch } = parseInvocation(values);
+  const { component, key, arch } = parseInvocation(values);
   const channel = values.channel;
   const prefix = values.prefix ?? (await defaultRefPrefix());
   if (arch !== paths.hostArch()) {
@@ -34,16 +34,16 @@ const main = async (): Promise<void> => {
   }
 
   const feature = await ensureFeatureBinary(paths.ridFor(arch), values.force);
-  const payload = paths.payloadPath(component, version, arch);
+  const payload = paths.payloadPath(component, key, arch);
   if (!(await paths.isFile(path.join(payload, "dotnet")))) {
     throw new Error(
-      `No payload at ${payload}; run scripts/tasks/features/dotnet/fetchPayload.ts --component ${component} --version ${version} --arch ${arch} first`,
+      `No payload at ${payload}; run scripts/tasks/features/dotnet/fetchPayload.ts --component ${component} --version ${key} --arch ${arch} first`,
     );
   }
 
-  const context = await assembleBuildContext(component, version, { [arch]: feature });
+  const context = await assembleBuildContext(component, key, { [arch]: feature });
   const config = await readConfig();
-  const refs = [...imageRefs(prefix, component, tagNames(config, component, version, channel)), ...(values.tag ?? [])];
+  const refs = [...imageRefs(prefix, component, tagNames(config, component, key, channel).all), ...(values.tag ?? [])];
   await $$`docker buildx build ${[
     ...["--platform", `linux/${arch}`],
     "--load",

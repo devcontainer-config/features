@@ -47,7 +47,7 @@ export const verify = async (argv: string[]): Promise<void> => {
   const selected = scenarios.select(values.scenario ?? []);
   const derived = await selection.derive(channel, prefix);
   console.log(
-    `>>> verify dotnet: selection sdk=${derived.components.sdk.version} runtime=${derived.components.runtime.version} aspnet=${derived.components.aspnet.version} tfm=${derived.tfm}`,
+    `>>> verify dotnet: selection sdk=${derived.components.sdk.key} runtime=${derived.components.runtime.key} aspnet=${derived.components.aspnet.key} tfm=${derived.tfm}`,
   );
 
   const tempPath = await mkdtempDisposable(path.join(tmpdir(), "devcontainer-verify-dotnet-"));

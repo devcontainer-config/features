@@ -4,11 +4,12 @@ import path, { posix } from "node:path";
 import { z } from "zod";
 
 import { projectRoot } from "@/scripts/project.js";
-import type { Component, FeatureConfig } from "@/scripts/tasks/features/uv/generateConfig.js";
+import { claimedKey } from "@/scripts/tasks/features/config.js";
+import type { Component, FeatureConfig, PythonVersion } from "@/scripts/tasks/features/uv/generateConfig.js";
 import { configPath, readConfig } from "@/scripts/tasks/features/uv/generateConfig.js";
 import type { DockerArch } from "@/scripts/tasks/features/uv/paths.js";
 import { paths } from "@/scripts/tasks/features/uv/paths.js";
-import { canonicalTag, imageRef } from "@/scripts/tasks/features/uv/tags.js";
+import { imageRef, tagNames } from "@/scripts/tasks/features/uv/tags.js";
 
 import { remoteUser } from "./lifecycle.js";
 
@@ -21,29 +22,23 @@ const userInitFeatureSchema = z.object({
 
 export interface ComponentImage {
   component: Component;
-  version: string;
+  key: string;
   ref: string;
+}
+
+export interface PythonImage extends ComponentImage {
+  component: "python";
+  pythonVersion: string;
 }
 
 export interface Selection {
   uv: ComponentImage;
-  python: ComponentImage;
-  previous: ComponentImage;
+  python: PythonImage;
+  previous: PythonImage;
   xdgDataPath: string;
   machine: string;
   muslTriple: string;
 }
-
-const latestVersion = (config: FeatureConfig, component: Component): string => {
-  const versions = config.components[component].versions;
-  const matches = Object.keys(versions).filter((version) => versions[version].aliases.includes("latest"));
-  if (matches.length !== 1) {
-    throw new Error(
-      `${configPath}: component ${component} must have exactly one latest version, found ${matches.length}`,
-    );
-  }
-  return matches[0];
-};
 
 const compareVersions = (left: string, right: string): number => {
   const leftParts = left.split(".").map(Number);
@@ -56,29 +51,50 @@ const compareVersions = (left: string, right: string): number => {
   return 0;
 };
 
-const previousPythonVersion = (config: FeatureConfig, latest: string): string => {
-  const versions = Object.keys(config.components.python.versions).filter(
-    (version) => compareVersions(version, latest) < 0,
-  );
-  versions.sort(compareVersions);
-  const previous = versions.at(-1);
+const comparePython = (left: PythonVersion, right: PythonVersion): number =>
+  compareVersions(left.pythonVersion, right.pythonVersion) || Number(left.build) - Number(right.build);
+
+const previousPython = (config: FeatureConfig, latest: string): { key: string; entry: PythonVersion } => {
+  const { versions } = config.components.python;
+  const latestEntry = versions[latest];
+  if (latestEntry === undefined) {
+    throw new Error(`${configPath}: component python has no version ${latest}`);
+  }
+  const below = Object.entries(versions)
+    .filter(([key, entry]) => key !== latest && comparePython(entry, latestEntry) < 0)
+    .sort((left, right) => comparePython(left[1], right[1]));
+  const previous = below.at(-1);
   if (previous === undefined) {
     throw new Error(`${configPath}: component python carries no version below ${latest}`);
   }
-  return previous;
+  const [key, entry] = previous;
+  return { key, entry };
 };
 
 const componentImage = (
   config: FeatureConfig,
   component: Component,
-  version: string,
+  key: string,
   channel: string,
   prefix: string,
 ): ComponentImage => ({
   component,
-  version,
-  ref: imageRef(prefix, component, canonicalTag(config, component, version, channel)),
+  key,
+  ref: imageRef(prefix, component, tagNames(config, component, key, channel).canonical),
 });
+
+const pythonImage = (config: FeatureConfig, key: string, channel: string, prefix: string): PythonImage => {
+  const entry = config.components.python.versions[key];
+  if (entry === undefined) {
+    throw new Error(`${configPath}: component python has no version ${key}`);
+  }
+  return {
+    component: "python",
+    key,
+    ref: imageRef(prefix, "python", tagNames(config, "python", key, channel).canonical),
+    pythonVersion: entry.pythonVersion,
+  };
+};
 
 const readXdgDataPath = async (): Promise<string> => {
   const data: unknown = JSON.parse(await readFile(userInitFeaturePath, "utf-8"));
@@ -95,13 +111,14 @@ const readXdgDataPath = async (): Promise<string> => {
 
 const derive = async (channel: string, prefix: string): Promise<Selection> => {
   const config = await readConfig();
-  const uvVersion = latestVersion(config, "uv");
-  const pythonVersion = latestVersion(config, "python");
+  const uvKey = claimedKey(config.components.uv.aliases, "latest", `${configPath} component uv`);
+  const pythonKey = claimedKey(config.components.python.aliases, "latest", `${configPath} component python`);
+  const previous = previousPython(config, pythonKey);
   const arch: DockerArch = paths.hostArch();
   return {
-    uv: componentImage(config, "uv", uvVersion, channel, prefix),
-    python: componentImage(config, "python", pythonVersion, channel, prefix),
-    previous: componentImage(config, "python", previousPythonVersion(config, pythonVersion), channel, prefix),
+    uv: componentImage(config, "uv", uvKey, channel, prefix),
+    python: pythonImage(config, pythonKey, channel, prefix),
+    previous: pythonImage(config, previous.key, channel, prefix),
     xdgDataPath: await readXdgDataPath(),
     machine: paths.machineOf(arch),
     muslTriple: paths.muslTriples[arch],

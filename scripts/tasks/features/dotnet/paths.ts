@@ -27,11 +27,10 @@ const ridFor = (arch: DockerArch): Rid => rids[arch];
 
 const payloadRoot = path.resolve(workspaces, "payload/dotnet");
 
-const payloadPath = (component: Component, version: string, arch: DockerArch): string =>
-  path.join(payloadRoot, component, version, arch);
+const payloadPath = (component: Component, key: string, arch: DockerArch): string =>
+  path.join(payloadRoot, component, key, arch);
 
-const contextPath = (component: Component, version: string): string =>
-  path.join(payloadRoot, "ctx", component, version);
+const contextPath = (component: Component, key: string): string => path.join(payloadRoot, "ctx", component, key);
 
 const packPath = (assembly: Assembly, rid: Rid): string => path.join(workspaces, "bin/dotnet", assembly, rid);
 

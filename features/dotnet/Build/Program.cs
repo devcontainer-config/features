@@ -4,7 +4,7 @@ using DevcontainerConfig.Dotnet.Build;
 
 [assembly: SupportedOSPlatform("linux")]
 
-Option<FileInfo> configOption = new("--config") { Required = true, Description = "Path to the feature config.json." };
+Option<string> configOption = new("--config") { Required = true, Description = "Path to the feature config.json." };
 Option<string> componentOption = new("--component")
 {
     Required = true,

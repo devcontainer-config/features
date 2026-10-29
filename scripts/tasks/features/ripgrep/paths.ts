@@ -26,9 +26,9 @@ const targets: Record<DockerArch, Target> = {
 
 const payloadRoot = path.resolve(workspaces, "payload/ripgrep");
 
-const payloadPath = (version: string, arch: DockerArch): string => path.join(payloadRoot, version, arch);
+const payloadPath = (key: string, arch: DockerArch): string => path.join(payloadRoot, key, arch);
 
-const contextPath = (version: string): string => path.join(payloadRoot, "ctx", version);
+const contextPath = (key: string): string => path.join(payloadRoot, "ctx", key);
 
 const isFile = async (candidate: string): Promise<boolean> => {
   try {

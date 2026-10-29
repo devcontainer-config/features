@@ -4,22 +4,51 @@ import path from "node:path";
 import { $$ } from "@/scripts/shell.js";
 import { download } from "@/scripts/tasks/features/download.js";
 
-import type { Component, PythonVersion, UvVersion } from "./generateConfig.js";
+import type { Artifact, Component, FeatureConfig, PythonVersion, UvVersion } from "./generateConfig.js";
 import { configPath, readConfig } from "./generateConfig.js";
 import type { DockerArch } from "./paths.js";
 import { paths } from "./paths.js";
 
 const pythonUrlPrefix = "https://github.com/astral-sh/python-build-standalone/releases/download/";
 const uvBinaries = ["uv", "uvx"] as const;
+const pythonVersionPattern = /^(\d+)\.(\d+)\.(\d+)$/u;
 
-interface PythonArchive {
+export interface UvSection {
+  component: "uv";
+  key: string;
+  entry: UvVersion;
+}
+
+export interface PythonSection {
+  component: "python";
+  key: string;
+  entry: PythonVersion;
+}
+
+export type PayloadSection = UvSection | PythonSection;
+
+export interface Sections {
+  uv: UvSection;
+  python: PythonSection;
+}
+
+export interface UvPayload {
+  component: "uv";
+  key: string;
+  cache: string;
+  present: string;
+  triple: string;
+  archive: Artifact;
+}
+
+export interface PythonArchive {
   build: string;
   name: string;
   url: string;
   sha256: string;
 }
 
-interface PythonDownloadEntry {
+export interface PythonDownloadEntry {
   name: string;
   arch: { family: string; variant: null };
   os: string;
@@ -34,16 +63,50 @@ interface PythonDownloadEntry {
   build: string;
 }
 
-const versionPin = <Entry>(versions: Record<string, Entry>, version: string): Entry => {
-  const entry = versions[version];
-  if (entry === undefined) {
-    throw new Error(`Version ${version} is not in ${configPath}`);
+export interface PythonPayload {
+  component: "python";
+  key: string;
+  pythonVersion: string;
+  build: string;
+  cache: string;
+  present: string;
+  archive: PythonArchive;
+  archivePath: string;
+  entryKey: string;
+  entryPath: string;
+  entry: PythonDownloadEntry;
+}
+
+export type Payload = UvPayload | PythonPayload;
+
+const sectionOfUntyped = (config: FeatureConfig, component: Component, key: string): PayloadSection => {
+  if (component === "uv") {
+    const entry = config.components.uv.versions[key];
+    if (entry === undefined) {
+      throw new Error(`${component} version ${key} is not in ${configPath}`);
+    }
+    return { component, key, entry };
   }
-  return entry;
+  const entry = config.components.python.versions[key];
+  if (entry === undefined) {
+    throw new Error(`${component} version ${key} is not in ${configPath}`);
+  }
+  return { component, key, entry };
 };
 
-const pythonArchive = (pin: PythonVersion, arch: DockerArch): PythonArchive => {
-  const { url, sha256 } = pin[paths.ridFor(arch)];
+export const sectionOf = <ComponentT extends Component>(
+  config: FeatureConfig,
+  component: ComponentT,
+  key: string,
+): Sections[ComponentT] => sectionOfUntyped(config, component, key) as Sections[ComponentT];
+
+export const loadSection = async <ComponentT extends Component>(
+  component: ComponentT,
+  key: string,
+): Promise<Sections[ComponentT]> => sectionOf(await readConfig(), component, key);
+
+const pythonArchive = (section: PythonSection, arch: DockerArch): PythonArchive => {
+  const { url, sha256 } = section.entry[paths.ridFor(arch)];
   if (!url.startsWith(pythonUrlPrefix)) {
     throw new Error(`${url}: a python archive url must start with ${pythonUrlPrefix}`);
   }
@@ -51,24 +114,24 @@ const pythonArchive = (pin: PythonVersion, arch: DockerArch): PythonArchive => {
   if (build === undefined || encodedName === undefined || rest.length > 0) {
     throw new Error(`${url}: a python archive url must be <release>/<build>/<file name>`);
   }
-  if (build !== pin.build) {
-    throw new Error(`${url}: the url build ${build} does not match the configured ${pin.build}`);
+  if (build !== section.entry.build) {
+    throw new Error(`${url}: the url build ${build} does not match the configured ${section.entry.build}`);
   }
   return { build, name: decodeURIComponent(encodedName), url, sha256 };
 };
 
 const pythonEntry = (
-  version: string,
+  section: PythonSection,
   arch: DockerArch,
   archive: PythonArchive,
 ): { key: string; entry: PythonDownloadEntry } => {
-  const match = /^(\d+)\.(\d+)\.(\d+)$/u.exec(version);
+  const match = pythonVersionPattern.exec(section.entry.pythonVersion);
   if (match === null) {
-    throw new Error(`Version ${version} is not <major>.<minor>.<patch>`);
+    throw new Error(`Version ${section.key} is not <major>.<minor>.<patch>`);
   }
   const [, major, minor, patch] = match;
   const machine = paths.machineOf(arch);
-  const key = `cpython-${version}-linux-${machine}-gnu`;
+  const key = `cpython-${section.entry.pythonVersion}-linux-${machine}-gnu`;
   const entry: PythonDownloadEntry = {
     name: "cpython",
     arch: { family: machine, variant: null },
@@ -86,11 +149,37 @@ const pythonEntry = (
   return { key, entry };
 };
 
-const uvPayloadPresent = (version: string, arch: DockerArch): Promise<boolean> =>
-  paths.isFile(path.join(paths.payloadPath("uv", version, arch), "uv"));
+export const derive = (section: PayloadSection, arch: DockerArch): Payload => {
+  const cache = paths.payloadPath(section.component, section.key, arch);
+  if (section.component === "uv") {
+    return {
+      component: "uv",
+      key: section.key,
+      cache,
+      present: path.join(cache, "uv"),
+      triple: paths.muslTriples[arch],
+      archive: section.entry[paths.ridFor(arch)],
+    };
+  }
+  const archive = pythonArchive(section, arch);
+  const { key: entryKey, entry } = pythonEntry(section, arch, archive);
+  const archivePath = path.join(cache, archive.build, archive.name);
+  return {
+    component: "python",
+    key: section.key,
+    pythonVersion: section.entry.pythonVersion,
+    build: archive.build,
+    cache,
+    present: archivePath,
+    archive,
+    archivePath,
+    entryKey,
+    entryPath: path.join(cache, "entries", `${entryKey}.json`),
+    entry,
+  };
+};
 
-const pythonArchivePath = (version: string, arch: DockerArch, archive: PythonArchive): string =>
-  path.join(paths.payloadPath("python", version, arch), archive.build, archive.name);
+export const payloadPresent = (payload: Payload): Promise<boolean> => paths.isFile(payload.present);
 
 export interface PythonPayloadPaths {
   archive: string;
@@ -99,46 +188,30 @@ export interface PythonPayloadPaths {
   name: string;
 }
 
-export const pythonPayloadPaths = async (version: string, arch: DockerArch): Promise<PythonPayloadPaths> => {
-  const config = await readConfig();
-  const pin = versionPin(config.components.python.versions, version);
-  const archive = pythonArchive(pin, arch);
-  const { key } = pythonEntry(version, arch, archive);
+export const pythonPayloadPaths = (section: PythonSection, arch: DockerArch): PythonPayloadPaths => {
+  const payload = derive(section, arch);
+  if (payload.component !== "python") {
+    throw new Error(`Version ${section.key} is not a python payload`);
+  }
   return {
-    archive: pythonArchivePath(version, arch, archive),
-    entry: path.join(paths.payloadPath("python", version, arch), "entries", `${key}.json`),
-    build: archive.build,
-    name: archive.name,
+    archive: payload.archivePath,
+    entry: payload.entryPath,
+    build: payload.build,
+    name: payload.archive.name,
   };
 };
 
-export const payloadPresent = async (component: Component, version: string, arch: DockerArch): Promise<boolean> => {
-  const config = await readConfig();
-  if (component === "uv") {
-    versionPin(config.components.uv.versions, version);
-    return uvPayloadPresent(version, arch);
-  }
-  const pin = versionPin(config.components.python.versions, version);
-  return paths.isFile(pythonArchivePath(version, arch, pythonArchive(pin, arch)));
-};
-
-const ensureUvPayload = async (version: string, arch: DockerArch, pin: UvVersion, force: boolean): Promise<void> => {
-  const outPath = paths.payloadPath("uv", version, arch);
-  if (!force && (await uvPayloadPresent(version, arch))) {
-    console.log(`Payload already present at ${outPath}; skipping fetch`);
-    return;
-  }
-  const tempPath = `${outPath}.tmp`;
+const fetchUvPayload = async (payload: UvPayload): Promise<void> => {
+  const tempPath = `${payload.cache}.tmp`;
   await rm(tempPath, { recursive: true, force: true });
   const archivePath = path.join(tempPath, "archive.tar.gz");
   const extractedPath = path.join(tempPath, "extracted");
   await mkdir(extractedPath, { recursive: true });
-  const { url, sha256 } = pin[paths.ridFor(arch)];
-  const actual = await download(url, archivePath);
-  if (actual !== sha256) {
-    throw new Error(`${url}: sha256 ${actual} does not match the configured ${sha256}`);
+  const actual = await download(payload.archive.url, archivePath);
+  if (actual !== payload.archive.sha256) {
+    throw new Error(`${payload.archive.url}: sha256 ${actual} does not match the configured ${payload.archive.sha256}`);
   }
-  const top = `uv-${paths.muslTriples[arch]}`;
+  const top = `uv-${payload.triple}`;
   await $$`tar ${[
     "-xzf",
     archivePath,
@@ -149,54 +222,41 @@ const ensureUvPayload = async (version: string, arch: DockerArch, pin: UvVersion
   ]}`;
   for (const binary of uvBinaries) {
     if (!(await paths.isFile(path.join(extractedPath, binary)))) {
-      throw new Error(`${url}: the archive has no ${binary}`);
+      throw new Error(`${payload.archive.url}: the archive has no ${binary}`);
     }
   }
-  await rm(outPath, { recursive: true, force: true });
-  await rename(extractedPath, outPath);
+  await rm(payload.cache, { recursive: true, force: true });
+  await rename(extractedPath, payload.cache);
   await rm(tempPath, { recursive: true, force: true });
-  console.log(`Payload written to ${outPath}`);
+  console.log(`Payload written to ${payload.cache}`);
 };
 
-const ensurePythonPayload = async (
-  version: string,
-  arch: DockerArch,
-  pin: PythonVersion,
-  force: boolean,
-): Promise<void> => {
-  const outPath = paths.payloadPath("python", version, arch);
-  const archive = pythonArchive(pin, arch);
-  if (!force && (await paths.isFile(pythonArchivePath(version, arch, archive)))) {
-    console.log(`Payload already present at ${outPath}; skipping fetch`);
+const fetchPythonPayload = async (payload: PythonPayload): Promise<void> => {
+  const tempPath = `${payload.cache}.tmp`;
+  await rm(tempPath, { recursive: true, force: true });
+  const downloadPath = path.join(tempPath, payload.build, payload.archive.name);
+  await mkdir(path.dirname(downloadPath), { recursive: true });
+  const actual = await download(payload.archive.url, downloadPath);
+  if (actual !== payload.archive.sha256) {
+    throw new Error(`${payload.archive.url}: sha256 ${actual} does not match the configured ${payload.archive.sha256}`);
+  }
+  const entryPath = path.join(tempPath, "entries", `${payload.entryKey}.json`);
+  await mkdir(path.dirname(entryPath), { recursive: true });
+  await writeFile(entryPath, `${JSON.stringify({ [payload.entryKey]: payload.entry }, null, 2)}\n`);
+  await rm(payload.cache, { recursive: true, force: true });
+  await rename(tempPath, payload.cache);
+  console.log(`Payload written to ${payload.cache}`);
+};
+
+export const ensurePayload = async (section: PayloadSection, arch: DockerArch, force: boolean): Promise<void> => {
+  const payload = derive(section, arch);
+  if (!force && (await payloadPresent(payload))) {
+    console.log(`Payload already present at ${payload.cache}; skipping fetch`);
     return;
   }
-  const tempPath = `${outPath}.tmp`;
-  await rm(tempPath, { recursive: true, force: true });
-  const downloadPath = path.join(tempPath, archive.build, archive.name);
-  await mkdir(path.dirname(downloadPath), { recursive: true });
-  const actual = await download(archive.url, downloadPath);
-  if (actual !== archive.sha256) {
-    throw new Error(`${archive.url}: sha256 ${actual} does not match the configured ${archive.sha256}`);
-  }
-  const { key, entry } = pythonEntry(version, arch, archive);
-  const entriesPath = path.join(tempPath, "entries");
-  await mkdir(entriesPath, { recursive: true });
-  await writeFile(path.join(entriesPath, `${key}.json`), `${JSON.stringify({ [key]: entry }, null, 2)}\n`);
-  await rm(outPath, { recursive: true, force: true });
-  await rename(tempPath, outPath);
-  console.log(`Payload written to ${outPath}`);
-};
-
-export const ensurePayload = async (
-  component: Component,
-  version: string,
-  arch: DockerArch,
-  force: boolean,
-): Promise<void> => {
-  const config = await readConfig();
-  if (component === "uv") {
-    await ensureUvPayload(version, arch, versionPin(config.components.uv.versions, version), force);
+  if (payload.component === "uv") {
+    await fetchUvPayload(payload);
   } else {
-    await ensurePythonPayload(version, arch, versionPin(config.components.python.versions, version), force);
+    await fetchPythonPayload(payload);
   }
 };

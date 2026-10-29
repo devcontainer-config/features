@@ -4,7 +4,6 @@
     "sdk": {
       "versions": {
         "11.0.100-rc.3.26522.148": {
-          "aliases": ["preview", "11-preview", "11.0-preview"],
           "linux-x64": {
             "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/11.0.100-rc.3.26522.148/dotnet-sdk-11.0.100-rc.3.26522.148-linux-x64.tar.gz",
             "sha512": "77ef603622f0632ce59fc631871c9d0ec0c7402399837c659ead5b6fc7ea898f7f64a2632ecdc8d3330e608307416a36bff90a4d10179210489676167b9b80da"
@@ -15,7 +14,6 @@
           }
         },
         "10.0.403": {
-          "aliases": ["10.0", "10", "lts", "latest"],
           "linux-x64": {
             "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.403/dotnet-sdk-10.0.403-linux-x64.tar.gz",
             "sha512": "b7b3d8461cf98b07d2552ce9199702fa3ad010ac2671a5f8cd5136f7534e50f6855ba7bbb02b11494563f1d04156276a31cda1103b900e5eecd0d9473dc7b9c5"
@@ -26,7 +24,6 @@
           }
         },
         "9.0.320": {
-          "aliases": ["9.0", "9"],
           "linux-x64": {
             "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/9.0.320/dotnet-sdk-9.0.320-linux-x64.tar.gz",
             "sha512": "eb371100b5c40641a812b3683bfda1772f0b69e5232091293c715d49eb837f52174b9b9a93375d692bddbfd1d57005f1a9aa774b4b30276665b0c0b1a9b66427"
@@ -37,7 +34,6 @@
           }
         },
         "8.0.427": {
-          "aliases": ["8.0", "8"],
           "linux-x64": {
             "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/8.0.427/dotnet-sdk-8.0.427-linux-x64.tar.gz",
             "sha512": "85725692f465f5024b9b42a159a29d9f73e8c57ad9e8bfe1e7028a505d18031d68931e8aa3f9de44145b08170dde897c8a78e1aa18d4219698b6891af7095d39"
@@ -47,12 +43,17 @@
             "sha512": "2b851de08e94922b382d1d2754df112cd167f6e9b6f3d15d2cfe143fded1d5b05d6b196b545941d22c97db62bb426d71a4fe6e131a92e482c6ea1a7337ffedab"
           }
         }
+      },
+      "aliases": {
+        "11.0.100-rc.3.26522.148": ["preview", "11-preview", "11.0-preview"],
+        "10.0.403": ["10.0", "10", "lts", "latest"],
+        "9.0.320": ["9.0", "9"],
+        "8.0.427": ["8.0", "8"]
       }
     },
     "runtime": {
       "versions": {
         "11.0.0-rc.3.26522.148": {
-          "aliases": ["preview", "11-preview", "11.0-preview"],
           "linux-x64": {
             "url": "https://builds.dotnet.microsoft.com/dotnet/Runtime/11.0.0-rc.3.26522.148/dotnet-runtime-11.0.0-rc.3.26522.148-linux-x64.tar.gz",
             "sha512": "3b059283f689d4338a2dee33e1b433f2218f9d754e25b96821ff68281ea5d0f354d4f284bba00d8b594cf2c166531593b538e3f8308a349ca6e844ee74c03ebb"
@@ -63,7 +64,6 @@
           }
         },
         "10.0.14": {
-          "aliases": ["10.0", "10", "lts", "latest"],
           "linux-x64": {
             "url": "https://builds.dotnet.microsoft.com/dotnet/Runtime/10.0.14/dotnet-runtime-10.0.14-linux-x64.tar.gz",
             "sha512": "634326028645f38731c8c4e71a68356e4ca0d6b6607139a234ab760687f742063edaf33a1f20dda615742d2dc8300ca2ff857619d51fbb38090383b71334af89"
@@ -74,7 +74,6 @@
           }
         },
         "9.0.22": {
-          "aliases": ["9.0", "9"],
           "linux-x64": {
             "url": "https://builds.dotnet.microsoft.com/dotnet/Runtime/9.0.22/dotnet-runtime-9.0.22-linux-x64.tar.gz",
             "sha512": "c6f039209e4b5824ac57837ff41e95f6ab3c79b1a118f4a8539707a8381df46d3b2ed98bbd893cc850c680feb18c64f2b2308c81f5f60e50927a76b295e5c402"
@@ -85,7 +84,6 @@
           }
         },
         "8.0.33": {
-          "aliases": ["8.0", "8"],
           "linux-x64": {
             "url": "https://builds.dotnet.microsoft.com/dotnet/Runtime/8.0.33/dotnet-runtime-8.0.33-linux-x64.tar.gz",
             "sha512": "b314039d337a8c5c4be6a6f99712a2618cbeb5e1ab7cac7a5c1cbf1c97bd355f5d116b9932a8cfc604ac7849f74638896eba0534892c6518311908aba29b4f7b"
@@ -95,12 +93,17 @@
             "sha512": "a9ba25eae72f98e25233ae202d6e4fb6663b2c8da23bcd9d797c89e8b1d01f51de90f1994dc7101a5fef56db401c05af184c5e251a9bce570adf044c4e3ae5a9"
           }
         }
+      },
+      "aliases": {
+        "11.0.0-rc.3.26522.148": ["preview", "11-preview", "11.0-preview"],
+        "10.0.14": ["10.0", "10", "lts", "latest"],
+        "9.0.22": ["9.0", "9"],
+        "8.0.33": ["8.0", "8"]
       }
     },
     "aspnet": {
       "versions": {
         "11.0.0-rc.3.26522.148": {
-          "aliases": ["preview", "11-preview", "11.0-preview"],
           "linux-x64": {
             "url": "https://builds.dotnet.microsoft.com/dotnet/aspnetcore/Runtime/11.0.0-rc.3.26522.148/aspnetcore-runtime-11.0.0-rc.3.26522.148-linux-x64.tar.gz",
             "sha512": "4c9319dcad8dd5b5eae734dae36331003a784e42401395cf5e24b19394a9955494a1d7b17ff4e9321d93cd1d960ca8c66cf9a849e90d1db7c35a50ba54f8260f"
@@ -111,7 +114,6 @@
           }
         },
         "10.0.14": {
-          "aliases": ["10.0", "10", "lts", "latest"],
           "linux-x64": {
             "url": "https://builds.dotnet.microsoft.com/dotnet/aspnetcore/Runtime/10.0.14/aspnetcore-runtime-10.0.14-linux-x64.tar.gz",
             "sha512": "dd024fd2616926a555b75cbf7a836f6dce998199f0596d9d75676dca2b9d59c8ee8673c6ac23473c0f1a4bdd59eb5cd02fe9ab097eeaf2dd8c8bd117c85e7031"
@@ -122,7 +124,6 @@
           }
         },
         "9.0.22": {
-          "aliases": ["9.0", "9"],
           "linux-x64": {
             "url": "https://builds.dotnet.microsoft.com/dotnet/aspnetcore/Runtime/9.0.22/aspnetcore-runtime-9.0.22-linux-x64.tar.gz",
             "sha512": "eafa93b084b09ee587739bbfadda0e4b3c734afa5308095100c7a310cd269caef2ec734ae27dabae563150e30b909e5b351f917bb44fb6d608ed8a4caeb590c2"
@@ -133,7 +134,6 @@
           }
         },
         "8.0.33": {
-          "aliases": ["8.0", "8"],
           "linux-x64": {
             "url": "https://builds.dotnet.microsoft.com/dotnet/aspnetcore/Runtime/8.0.33/aspnetcore-runtime-8.0.33-linux-x64.tar.gz",
             "sha512": "08e37c6cd09edde60170f3f65531f1b688610f692f9de62125e2f7217bffa2ac130c9d6b49803266ac2d4916a91a277e095c226b83e8ea565d7de4014422aa6d"
@@ -143,6 +143,12 @@
             "sha512": "d39d1b692f79d1a9acdfa21383826ee9d1f606f24693a4ffe495a10996bcbd4f337d092544da48de5a54eae6e5ee475bd12ab36e04516e91a5d6409212a8925b"
           }
         }
+      },
+      "aliases": {
+        "11.0.0-rc.3.26522.148": ["preview", "11-preview", "11.0-preview"],
+        "10.0.14": ["10.0", "10", "lts", "latest"],
+        "9.0.22": ["9.0", "9"],
+        "8.0.33": ["8.0", "8"]
       }
     }
   }

@@ -11,11 +11,11 @@ import { paths } from "./paths.js";
 
 export const ensurePayload = async (
   component: Component,
-  version: string,
+  key: string,
   arch: DockerArch,
   force: boolean,
 ): Promise<void> => {
-  const outPath = paths.payloadPath(component, version, arch);
+  const outPath = paths.payloadPath(component, key, arch);
   if (!force && (await paths.isFile(path.join(outPath, "dotnet")))) {
     console.log(`Payload already present at ${outPath}; skipping fetch`);
     return;
@@ -27,7 +27,7 @@ export const ensurePayload = async (
     buildBinary,
     ...["--config", configPath],
     ...["--component", component],
-    ...["--version", version],
+    ...["--version", key],
     ...["--arch", arch],
     ...["--out", tempPath],
   ]}`;

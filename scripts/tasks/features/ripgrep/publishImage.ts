@@ -6,10 +6,10 @@ import { defaultRefPrefix, mainChannel } from "@/scripts/tasks/features/tags.js"
 
 import { assembleBuildContext } from "./buildContext.js";
 import { readConfig } from "./generateConfig.js";
-import { parseVersion } from "./invocation.js";
+import { parseKey } from "./invocation.js";
 import { paths } from "./paths.js";
-import { ensurePayload } from "./payload.js";
-import { imageRefs, tagNames } from "./tags.js";
+import { ensurePayload, loadSection } from "./payload.js";
+import { imageRef, tagNames } from "./tags.js";
 
 const main = async (): Promise<void> => {
   const { values } = parseArgs({
@@ -20,17 +20,18 @@ const main = async (): Promise<void> => {
     },
   });
 
-  const version = parseVersion(values.version);
+  const key = parseKey(values.version);
   const channel = values.channel;
   const prefix = values.prefix ?? (await defaultRefPrefix());
   const config = await readConfig();
-  const tags = tagNames(config, version, channel);
+  const canonical = tagNames(config, key, channel).canonical;
+  const section = await loadSection(key);
   for (const arch of paths.dockerArchOptions) {
-    await ensurePayload(version, arch, false);
+    await ensurePayload(section, arch, false);
   }
-  const context = await assembleBuildContext(version, paths.dockerArchOptions);
+  const context = await assembleBuildContext(key, paths.dockerArchOptions);
   await login(prefix);
-  const refs = imageRefs(prefix, tags);
+  const refs = [imageRef(prefix, canonical)];
   await pushImage(context, refs);
   console.log(refs.join("\n"));
 };

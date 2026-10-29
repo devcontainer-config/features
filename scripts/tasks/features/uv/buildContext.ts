@@ -10,11 +10,11 @@ import { paths } from "./paths.js";
 
 export const assembleBuildContext = async (
   component: Component,
-  version: string,
+  key: string,
   arches: readonly DockerArch[],
   featureBinaries: Partial<Record<DockerArch, string>>,
 ): Promise<string> => {
-  const context = paths.contextPath(component, version);
+  const context = paths.contextPath(component, key);
   await rm(context, { recursive: true, force: true });
   await mkdir(path.join(context, "docker"), { recursive: true });
   await copyFile(path.join(projectRoot, "features/uv/Dockerfile"), path.join(context, "docker", "Dockerfile"));
@@ -26,13 +26,13 @@ export const assembleBuildContext = async (
         throw new Error(`No Feature binary for ${arch}`);
       }
       await mkdir(path.join(stagedRoot, "uv"), { recursive: true });
-      await linkTree(paths.payloadPath(component, version, arch), path.join(stagedRoot, "uv"));
+      await linkTree(paths.payloadPath(component, key, arch), path.join(stagedRoot, "uv"));
       await copyFile(path.join(projectRoot, "features/uv/install"), path.join(stagedRoot, "install"));
       await copyFile(path.join(projectRoot, "features/uv/onCreate"), path.join(stagedRoot, "onCreate"));
       await copyFile(featureBinary, path.join(stagedRoot, "Feature"));
     } else {
       await mkdir(path.join(stagedRoot, "python"), { recursive: true });
-      await linkTree(paths.payloadPath(component, version, arch), path.join(stagedRoot, "python"));
+      await linkTree(paths.payloadPath(component, key, arch), path.join(stagedRoot, "python"));
     }
   }
   return context;

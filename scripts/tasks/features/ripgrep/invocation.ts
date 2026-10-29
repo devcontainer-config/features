@@ -2,11 +2,11 @@ import type { DockerArch } from "./paths.js";
 import { paths } from "./paths.js";
 
 export interface Invocation {
-  version: string;
+  key: string;
   arch: DockerArch;
 }
 
-export const parseVersion = (value: string | undefined): string => {
+export const parseKey = (value: string | undefined): string => {
   if (value === undefined || value === "") {
     throw new Error("--version is required");
   }
@@ -14,7 +14,7 @@ export const parseVersion = (value: string | undefined): string => {
 };
 
 export const parseInvocation = (values: { version?: string; arch?: string }): Invocation => {
-  const version = parseVersion(values.version);
+  const key = parseKey(values.version);
   const arch =
     values.arch === undefined
       ? paths.hostArch()
@@ -22,5 +22,5 @@ export const parseInvocation = (values: { version?: string; arch?: string }): In
   if (arch === undefined) {
     throw new Error(`--arch must be one of: ${paths.dockerArchOptions.join(", ")}`);
   }
-  return { version, arch };
+  return { key, arch };
 };
