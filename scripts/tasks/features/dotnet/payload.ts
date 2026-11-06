@@ -3,11 +3,15 @@ import path from "node:path";
 
 import { $$ } from "@/scripts/shell.js";
 
+import type { DockerArch } from "../architecture.js";
+import { hostArch, isFile, ridFor } from "../architecture.js";
+import { payloadPath } from "../paths.js";
 import type { Component } from "./generateConfig.js";
 import { configPath } from "./generateConfig.js";
 import { ensureBuildBinary } from "./packBinary.js";
-import type { DockerArch } from "./paths.js";
-import { paths } from "./paths.js";
+
+export const payloadPresent = (component: Component, key: string, arch: DockerArch): Promise<boolean> =>
+  isFile(path.join(payloadPath("dotnet", component, key, arch), "dotnet"));
 
 export const ensurePayload = async (
   component: Component,
@@ -15,12 +19,12 @@ export const ensurePayload = async (
   arch: DockerArch,
   force: boolean,
 ): Promise<void> => {
-  const outPath = paths.payloadPath(component, key, arch);
-  if (!force && (await paths.isFile(path.join(outPath, "dotnet")))) {
+  const outPath = payloadPath("dotnet", component, key, arch);
+  if (!force && (await payloadPresent(component, key, arch))) {
     console.log(`Payload already present at ${outPath}; skipping fetch`);
     return;
   }
-  const buildBinary = await ensureBuildBinary(paths.ridFor(paths.hostArch()), force);
+  const buildBinary = await ensureBuildBinary(ridFor(hostArch()), force);
   const tempPath = `${outPath}.tmp`;
   await rm(tempPath, { recursive: true, force: true });
   await $$`${[

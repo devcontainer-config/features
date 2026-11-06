@@ -8,9 +8,10 @@ import prettierOptions from "@/.config/prettier/.prettierrc.json" with { type: "
 import { projectRoot } from "@/scripts/project.js";
 import { checkTagNamespace } from "@/scripts/tasks/features/config.js";
 
+import type { DockerArch, Rid } from "../architecture.js";
+import { dockerArchOptions, ridFor, rids } from "../architecture.js";
 import { verifyAttestation } from "./attestations.js";
-import type { DockerArch } from "./paths.js";
-import { paths } from "./paths.js";
+import { gnuTriples, muslTriples } from "./paths.js";
 
 const uvIndexUrl = "https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson";
 const pythonIndexUrl = "https://raw.githubusercontent.com/astral-sh/versions/main/v1/python-build-standalone.ndjson";
@@ -24,8 +25,7 @@ export const configPath = path.resolve(projectRoot, "features/uv/config.json");
 export const components = ["uv", "python"] as const;
 export type Component = (typeof components)[number];
 
-export const rids = ["linux-x64", "linux-arm64"] as const;
-export type Rid = (typeof rids)[number];
+export const componentSchema = z.enum(components);
 
 const indexArtifactSchema = z.object({
   platform: z.string(),
@@ -67,7 +67,7 @@ const pythonComponentSchema = z.strictObject({
 });
 
 export const featureConfigSchema = z.strictObject({
-  revision: z.number(),
+  revision: z.int().min(1),
   components: z.strictObject({
     uv: uvComponentSchema,
     python: pythonComponentSchema,
@@ -110,7 +110,7 @@ const resolveArtifacts = async (
   variant: string,
 ): Promise<Record<Rid, Artifact>> => {
   const resolved = Object.fromEntries(
-    paths.dockerArchOptions.map((arch) => {
+    dockerArchOptions.map((arch) => {
       const platform = platforms[arch];
       const matches = artifacts.filter(
         (artifact) =>
@@ -120,7 +120,7 @@ const resolveArtifacts = async (
         throw new Error(`Release ${version}: expected one ${platform} ${variant} archive, found ${matches.length}`);
       }
       const [artifact] = matches;
-      return [paths.ridFor(arch), { url: artifact.url, sha256: artifact.sha256 }] as const;
+      return [ridFor(arch), { url: artifact.url, sha256: artifact.sha256 }] as const;
     }),
   ) as Record<Rid, Artifact>;
   for (const rid of rids) {
@@ -129,12 +129,28 @@ const resolveArtifacts = async (
   return resolved;
 };
 
+const compareVersions = (left: string, right: string): number => {
+  const leftParts = left.split(".").map(Number);
+  const rightParts = right.split(".").map(Number);
+  for (const [index, part] of leftParts.entries()) {
+    if (part !== rightParts[index]) {
+      return part - rightParts[index];
+    }
+  }
+  return 0;
+};
+
 const trackedUvRelease = (releases: readonly IndexRelease[]): IndexRelease => {
-  const release = releases.find((candidate) => stablePattern.test(candidate.version));
-  if (release === undefined) {
+  const stable = releases.filter((release) => stablePattern.test(release.version));
+  const tracked = stable.reduce<IndexRelease | undefined>(
+    (greatest, release) =>
+      greatest === undefined || compareVersions(release.version, greatest.version) > 0 ? release : greatest,
+    undefined,
+  );
+  if (tracked === undefined) {
     throw new Error("The uv version index carries no stable release");
   }
-  return release;
+  return tracked;
 };
 
 const pythonReleaseParts = (release: IndexRelease): { version: string; build: string } => {
@@ -163,17 +179,6 @@ const trackedPythonReleases = (releases: readonly IndexRelease[]): { build: stri
   return { build, entries };
 };
 
-const compareVersions = (left: string, right: string): number => {
-  const leftParts = left.split(".").map(Number);
-  const rightParts = right.split(".").map(Number);
-  for (const [index, part] of leftParts.entries()) {
-    if (part !== rightParts[index]) {
-      return part - rightParts[index];
-    }
-  }
-  return 0;
-};
-
 const pythonVersions = async (releases: readonly IndexRelease[]): Promise<Components["python"]> => {
   const { build, entries } = trackedPythonReleases(releases);
   const resolved = await Promise.all(
@@ -184,7 +189,7 @@ const pythonVersions = async (releases: readonly IndexRelease[]): Promise<Compon
       const entry: PythonVersion = {
         pythonVersion: version,
         build,
-        ...(await resolveArtifacts(pythonSlug, version, release.artifacts, paths.gnuTriples, "install_only_stripped")),
+        ...(await resolveArtifacts(pythonSlug, version, release.artifacts, gnuTriples, "install_only_stripped")),
       };
       return { key, version, aliases: [`${major}.${minor}`, version], entry } as const;
     }),
@@ -259,7 +264,7 @@ export const generateConfig = async (): Promise<void> => {
             uvSlug,
             uvRelease.version,
             uvRelease.artifacts,
-            paths.muslTriples,
+            muslTriples,
             "default",
           ),
         },
@@ -274,12 +279,3 @@ export const generateConfig = async (): Promise<void> => {
     await prettier.format(JSON.stringify(config), { ...prettierOptions, filepath: configPath }),
   );
 };
-
-if (import.meta.main) {
-  try {
-    await generateConfig();
-  } catch (error) {
-    console.error(error);
-    process.exitCode = 1;
-  }
-}

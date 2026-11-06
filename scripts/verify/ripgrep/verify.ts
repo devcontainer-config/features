@@ -1,20 +1,25 @@
-import { mkdtempDisposable } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import path from "node:path";
-import { parseArgs } from "node:util";
 
-import { defaultRefPrefix, mainChannel } from "@/scripts/tasks/features/tags.js";
+import { z } from "zod";
 
-import type { Expectation } from "./assertions.js";
-import { assertions } from "./assertions.js";
-import { imagesModes, lifecycle, testImagePrefix } from "./lifecycle.js";
+import { parseVerifyArguments, selectionSchema } from "../arguments.js";
+import { lifecycle } from "../lifecycle.js";
+import type { Exec } from "../run.js";
+import { runSuite } from "../run.js";
 import { selection } from "./selection.js";
-import { staging } from "./staging.js";
 
-interface Exec {
-  command: readonly string[];
-  expect: Expectation;
-}
+const names = ["default", "smoke"] as const;
+type ScenarioName = (typeof names)[number];
+
+const scenarioSelectionSchema = selectionSchema(z.enum(names), names, ["default"]);
+
+const targetSchema = z.object({
+  component: z.literal("ripgrep").optional(),
+  version: z.string().min(1).optional(),
+});
+
+const testImagePrefix = "features-verify-ripgrep";
+const testImageDockerfile = path.join(import.meta.dirname, "test-image.Dockerfile");
 
 const installedFiles = [
   "/usr/local/share/man/man1/rg.1",
@@ -53,62 +58,44 @@ const defaultExecs = (version: string): Exec[] => [
   },
 ];
 
-export const verify = async (argv: string[]): Promise<void> => {
-  const { values } = parseArgs({
-    args: argv,
-    options: {
-      force: { type: "boolean", default: false },
-      rmi: { type: "boolean", default: false },
-      images: { type: "string", default: "build" },
-      channel: { type: "string", default: mainChannel },
-      prefix: { type: "string" },
-    },
-  });
+const smokeExecs = (version: string): Exec[] => [
+  {
+    command: ["sh", "-c", "rg --version | awk 'NR == 1 { print $1, $2 }'"],
+    expect: { stdout: [`ripgrep ${version}`] },
+  },
+  {
+    command: ["sh", "-c", "rg --version | grep -Fx 'features:+pcre2'"],
+    expect: { stdout: ["features:+pcre2"] },
+  },
+  { command: ["rg", "--help"], expect: { exitCode: 0 } },
+];
 
-  const images = imagesModes.find((candidate) => candidate === values.images);
-  if (images === undefined) {
-    throw new Error(`--images must be one of: ${imagesModes.join(", ")}`);
-  }
-  const channel = values.channel;
-  const prefix = values.prefix ?? (await defaultRefPrefix());
-  const derived = await selection.derive(channel, prefix);
+const execsOf: Record<ScenarioName, (version: string) => readonly Exec[]> = {
+  default: defaultExecs,
+  smoke: smokeExecs,
+};
+
+export const verify = async (argv: string[]): Promise<void> => {
+  const { options, scenarios: requested, component, version } = await parseVerifyArguments(argv);
+  const selected = scenarioSelectionSchema.parse(requested);
+  const { version: key } = targetSchema.parse({ component, version });
+  const derived = await selection.derive(options.channel, options.prefix, key);
   console.log(`>>> verify ripgrep: selection version=${derived.key} ref=${derived.ref}`);
 
-  const tempPath = await mkdtempDisposable(path.join(tmpdir(), "devcontainer-verify-ripgrep-"));
-  const workspace = lifecycle.workspaceAt(tempPath.path, "default");
-  const testImage = `${testImagePrefix}:${derived.key}`;
-
-  try {
-    console.log(">>> verify ripgrep: provision");
-    await lifecycle.provision({
-      images,
-      key: derived.key,
-      ref: derived.ref,
-      channel,
-      prefix,
-      force: values.force,
-    });
-
-    console.log(">>> verify ripgrep: test image");
-    await lifecycle.buildTestImage(path.join(tempPath.path, "ctx"), derived.key, derived.ref);
-
-    console.log(">>> verify ripgrep: workspace");
-    await lifecycle.createWorkspace(workspace, { image: testImage });
-    await staging.features(workspace);
-
-    console.log(">>> verify ripgrep: scenario default");
-    await lifecycle.buildContainer(workspace);
-    await lifecycle.startContainer(workspace);
-    for (const exec of defaultExecs(derived.key)) {
-      assertions.exec(await lifecycle.execInContainer(workspace, exec), exec.expect);
-    }
-  } finally {
-    console.log(">>> verify ripgrep: cleanup");
-    await lifecycle.removeContainer(workspace);
-    await lifecycle.removeWorkspaceImages(workspace);
-    if (values.rmi) {
-      await lifecycle.removeImage(testImage);
-    }
-    await tempPath.remove();
-  }
+  await runSuite({
+    ...options,
+    name: "ripgrep",
+    create: (root) =>
+      selected.map((name) => ({
+        name,
+        workspace: lifecycle.workspaceAt(root, name),
+        testImage: {
+          tag: `${testImagePrefix}:${derived.key}`,
+          components: [derived],
+          dockerfile: testImageDockerfile,
+          args: [`RIPGREP_IMAGE_REF=${derived.ref}`],
+        },
+        execs: execsOf[name](derived.key),
+      })),
+  });
 };

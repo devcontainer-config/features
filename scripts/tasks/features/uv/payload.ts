@@ -4,10 +4,12 @@ import path from "node:path";
 import { $$ } from "@/scripts/shell.js";
 import { download } from "@/scripts/tasks/features/download.js";
 
+import type { DockerArch } from "../architecture.js";
+import { isFile, ridFor } from "../architecture.js";
+import { payloadPath } from "../paths.js";
 import type { Artifact, Component, FeatureConfig, PythonVersion, UvVersion } from "./generateConfig.js";
 import { configPath, readConfig } from "./generateConfig.js";
-import type { DockerArch } from "./paths.js";
-import { paths } from "./paths.js";
+import { machineOf, muslTriples } from "./paths.js";
 
 const pythonUrlPrefix = "https://github.com/astral-sh/python-build-standalone/releases/download/";
 const uvBinaries = ["uv", "uvx"] as const;
@@ -106,7 +108,7 @@ export const loadSection = async <ComponentT extends Component>(
 ): Promise<Sections[ComponentT]> => sectionOf(await readConfig(), component, key);
 
 const pythonArchive = (section: PythonSection, arch: DockerArch): PythonArchive => {
-  const { url, sha256 } = section.entry[paths.ridFor(arch)];
+  const { url, sha256 } = section.entry[ridFor(arch)];
   if (!url.startsWith(pythonUrlPrefix)) {
     throw new Error(`${url}: a python archive url must start with ${pythonUrlPrefix}`);
   }
@@ -130,7 +132,7 @@ const pythonEntry = (
     throw new Error(`Version ${section.key} is not <major>.<minor>.<patch>`);
   }
   const [, major, minor, patch] = match;
-  const machine = paths.machineOf(arch);
+  const machine = machineOf(arch);
   const key = `cpython-${section.entry.pythonVersion}-linux-${machine}-gnu`;
   const entry: PythonDownloadEntry = {
     name: "cpython",
@@ -149,16 +151,19 @@ const pythonEntry = (
   return { key, entry };
 };
 
-export const derive = (section: PayloadSection, arch: DockerArch): Payload => {
-  const cache = paths.payloadPath(section.component, section.key, arch);
+export function derive(section: UvSection, arch: DockerArch): UvPayload;
+export function derive(section: PythonSection, arch: DockerArch): PythonPayload;
+export function derive(section: PayloadSection, arch: DockerArch): Payload;
+export function derive(section: PayloadSection, arch: DockerArch): Payload {
+  const cache = payloadPath("uv", section.component, section.key, arch);
   if (section.component === "uv") {
     return {
       component: "uv",
       key: section.key,
       cache,
       present: path.join(cache, "uv"),
-      triple: paths.muslTriples[arch],
-      archive: section.entry[paths.ridFor(arch)],
+      triple: muslTriples[arch],
+      archive: section.entry[ridFor(arch)],
     };
   }
   const archive = pythonArchive(section, arch);
@@ -177,29 +182,9 @@ export const derive = (section: PayloadSection, arch: DockerArch): Payload => {
     entryPath: path.join(cache, "entries", `${entryKey}.json`),
     entry,
   };
-};
-
-export const payloadPresent = (payload: Payload): Promise<boolean> => paths.isFile(payload.present);
-
-export interface PythonPayloadPaths {
-  archive: string;
-  entry: string;
-  build: string;
-  name: string;
 }
 
-export const pythonPayloadPaths = (section: PythonSection, arch: DockerArch): PythonPayloadPaths => {
-  const payload = derive(section, arch);
-  if (payload.component !== "python") {
-    throw new Error(`Version ${section.key} is not a python payload`);
-  }
-  return {
-    archive: payload.archivePath,
-    entry: payload.entryPath,
-    build: payload.build,
-    name: payload.archive.name,
-  };
-};
+export const payloadPresent = (payload: Payload): Promise<boolean> => isFile(payload.present);
 
 const fetchUvPayload = async (payload: UvPayload): Promise<void> => {
   const tempPath = `${payload.cache}.tmp`;
@@ -221,7 +206,7 @@ const fetchUvPayload = async (payload: UvPayload): Promise<void> => {
     ...uvBinaries.map((binary) => `${top}/${binary}`),
   ]}`;
   for (const binary of uvBinaries) {
-    if (!(await paths.isFile(path.join(extractedPath, binary)))) {
+    if (!(await isFile(path.join(extractedPath, binary)))) {
       throw new Error(`${payload.archive.url}: the archive has no ${binary}`);
     }
   }
