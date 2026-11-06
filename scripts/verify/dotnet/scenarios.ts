@@ -1,31 +1,31 @@
 // spell-checker:ignore compinit
 import path from "node:path";
 
+import { z } from "zod";
+
 import type { Component } from "@/scripts/tasks/features/dotnet/generateConfig.js";
 
-import type { Expectation } from "./assertions.js";
-import type { TestImage, Workspace } from "./lifecycle.js";
-import { lifecycle } from "./lifecycle.js";
-import type { Selection } from "./selection.js";
-import type { Serve } from "./serve.js";
+import { selectionSchema } from "../arguments.js";
+import type { ComponentImage, TestImage, Workspace } from "../lifecycle.js";
+import { lifecycle } from "../lifecycle.js";
+import type { Exec, Scenario, ScenarioVariant } from "../run.js";
+import type { Serve } from "../serve.js";
+import type { Selection, SelectionTarget } from "./selection.js";
+import { staging } from "./staging.js";
 
-const names = ["sdk", "runtime", "aspnet", "multi"] as const;
-export type ScenarioName = (typeof names)[number];
+const names = ["sdk", "runtime", "aspnet", "multi", "smoke"] as const;
+type ScenarioName = (typeof names)[number];
+type ImageScenarioName = Exclude<ScenarioName, "smoke">;
 
-const appNames = ["console", "web"] as const;
-export type AppName = (typeof appNames)[number];
+export const scenarioSelectionSchema = selectionSchema(
+  z.enum(names),
+  names,
+  names.filter((name) => name !== "smoke"),
+);
 
-export interface Exec {
-  command: readonly string[];
-  env?: Readonly<Record<string, string>>;
-  expect: Expectation;
-}
+type AppName = "console" | "web";
 
-export interface ScenarioContext {
-  selection: Selection;
-  root: string;
-  workspace: Workspace;
-}
+const testImagePrefix = "features-verify-dotnet";
 
 interface ScenarioDefinition {
   components: readonly Component[];
@@ -41,26 +41,12 @@ type ScenarioVariantDefinition = {
   skipWorkloadIntegrityCheck?: boolean;
 } & ({ execs: readonly Exec[] } | { buildFailure: string });
 
-export type ScenarioVariant = {
-  name: string;
+interface ScenarioContext {
+  selection: Selection;
+  target: SelectionTarget | undefined;
+  root: string;
   workspace: Workspace;
-  testImage: TestImage;
-  skipWorkloadIntegrityCheck?: boolean;
-} & ({ execs: readonly Exec[] } | { buildFailure: string });
-
-export interface Scenario extends ScenarioDefinition {
-  name: ScenarioName;
-  workspace: Workspace;
-  testImage: TestImage;
-  execs: readonly Exec[];
-  remoteEnv?: Readonly<Record<string, string>>;
-  serve?: Serve;
-  variants: readonly ScenarioVariant[];
-}
-
-export interface BuildStage {
-  testImage: TestImage;
-  publishes: readonly Exec[];
+  build: Workspace | undefined;
 }
 
 interface ScenarioBehavior {
@@ -70,13 +56,45 @@ interface ScenarioBehavior {
   variants?: readonly ScenarioVariantDefinition[];
 }
 
-const testImagePrefix = "features-verify-dotnet";
-
-const definitions: Record<ScenarioName, ScenarioDefinition> = {
+const definitions: Record<ImageScenarioName, ScenarioDefinition> = {
   sdk: { components: ["sdk"], assets: ["hello.cs", "tool"], directories: ["pushed"] },
   runtime: { components: ["runtime"], assets: [], directories: [], app: "console" },
   aspnet: { components: ["aspnet"], assets: [], directories: [], app: "web" },
   multi: { components: ["sdk", "runtime", "aspnet"], assets: [], directories: [] },
+};
+
+const remoteEnvOf = (
+  skipWorkloadIntegrityCheck = true,
+  extra: Readonly<Record<string, string>> = {},
+): Readonly<Record<string, string>> => ({
+  DOTNET_NOLOGO: "1",
+  ...(skipWorkloadIntegrityCheck ? { DOTNET_SKIP_WORKLOAD_INTEGRITY_CHECK: "1" } : {}),
+  ...extra,
+});
+
+const componentsOf = (name: ImageScenarioName, selection: Selection): ComponentImage[] =>
+  definitions[name].components.map((component) => selection.components[component]);
+
+type ComponentArg = readonly [string, ComponentImage];
+
+const testImageOf = (name: string, components: readonly ComponentImage[], variant?: string): TestImage => {
+  const [label] = components;
+  if (label === undefined) {
+    throw new Error(`The ${name} test image declares no components`);
+  }
+  const componentArgs: readonly ComponentArg[] =
+    components.length === 1
+      ? [["DOTNET_IMAGE_REF", label]]
+      : components.map((component) => [`DOTNET_${component.component.toUpperCase()}_IMAGE_REF`, component]);
+  return {
+    tag: `${testImagePrefix}:${variant === undefined ? name : `${name}-${variant}`}-${label.key}`,
+    components,
+    dockerfile: path.join(
+      import.meta.dirname,
+      componentArgs.length === 1 ? "test-image.Dockerfile" : "test-image-multi.Dockerfile",
+    ),
+    args: componentArgs.map(([arg, component]) => `${arg}=${component.ref}`),
+  };
 };
 
 const completionFiles = [
@@ -213,7 +231,7 @@ const runtimeBehavior = (): ScenarioBehavior => ({
 
 const aspnetBehavior = ({ workspace }: ScenarioContext): ScenarioBehavior => ({
   execs: [],
-  remoteEnv: { ASPNETCORE_URLS: `http://unix:${workspace.containerPath}/app.sock` },
+  remoteEnv: remoteEnvOf(true, { ASPNETCORE_URLS: `http://unix:${workspace.containerPath}/app.sock` }),
   serve: {
     command: ["dotnet", "app/web.dll"],
     socketPath: path.join(workspace.path, "app.sock"),
@@ -240,7 +258,7 @@ const multiBehavior = ({ selection }: ScenarioContext): ScenarioBehavior => ({
   ],
 });
 
-const behaviors: Record<ScenarioName, (context: ScenarioContext) => ScenarioBehavior> = {
+const behaviors: Record<ImageScenarioName, (context: ScenarioContext) => ScenarioBehavior> = {
   sdk: sdkBehavior,
   runtime: runtimeBehavior,
   aspnet: aspnetBehavior,
@@ -249,50 +267,132 @@ const behaviors: Record<ScenarioName, (context: ScenarioContext) => ScenarioBeha
 
 const appOutput = (app: AppName): string => `out/${app}`;
 
-const testImageOf = (name: ScenarioName, selection: Selection, variant?: string): TestImage => {
-  const components = definitions[name].components.map((component) => selection.components[component]);
-  const [label] = components;
-  if (label === undefined) {
-    throw new Error(`Scenario ${name} declares no components`);
+const appOf = (selected: readonly ScenarioName[]): AppName[] => [
+  ...new Set(
+    selected.flatMap((name) => {
+      if (name === "smoke") {
+        return [];
+      }
+      const { app } = definitions[name];
+      return app === undefined ? [] : [app];
+    }),
+  ),
+];
+
+const variantImage = (
+  name: ImageScenarioName,
+  definition: ScenarioVariantDefinition,
+  context: ScenarioContext,
+): TestImage => {
+  const image = testImageOf(name, componentsOf(name, context.selection), definition.name);
+  if (definition.dockerfile === undefined) {
+    return image;
   }
-  const image = variant === undefined ? name : `${name}-${variant}`;
-  return { tag: `${testImagePrefix}:${image}-${label.key}`, components };
+  if (definitions[name].components.length !== 1) {
+    throw new Error(`The ${name} scenario declares ${definition.name} with a dockerfile and multiple components`);
+  }
+  return {
+    ...image,
+    dockerfile: path.join(import.meta.dirname, definition.dockerfile),
+    files: (definition.files ?? []).map((file) => ({ name: file, source: path.join(import.meta.dirname, file) })),
+  };
 };
 
 const materializeVariant = (
-  name: ScenarioName,
+  name: ImageScenarioName,
   definition: ScenarioVariantDefinition,
   context: ScenarioContext,
 ): ScenarioVariant => {
-  const image = testImageOf(name, context.selection, definition.name);
   const variant = {
     name: definition.name,
     workspace: lifecycle.workspaceAt(context.root, `${name}-${definition.name}`),
-    testImage: { ...image, dockerfile: definition.dockerfile, files: definition.files },
-    skipWorkloadIntegrityCheck: definition.skipWorkloadIntegrityCheck,
+    testImage: variantImage(name, definition, context),
+    remoteEnv: remoteEnvOf(definition.skipWorkloadIntegrityCheck),
   };
   return "buildFailure" in definition
     ? { ...variant, buildFailure: definition.buildFailure }
     : { ...variant, execs: definition.execs };
 };
 
+const smokeScenario = (context: ScenarioContext): Scenario => {
+  const { selection, target, workspace } = context;
+  if (target === undefined) {
+    throw new Error("The smoke scenario requires a target component and version");
+  }
+  const image = selection.components[target.component];
+  const execs: Exec[] = [];
+  switch (image.component) {
+    case "sdk":
+      execs.push({ command: ["dotnet", "--version"], expect: { stdout: [image.key] } });
+      break;
+    case "runtime":
+      execs.push({
+        command: ["dotnet", "--list-runtimes"],
+        expect: { stdout: [`Microsoft.NETCore.App ${image.key} [/opt/dotnet/shared/Microsoft.NETCore.App]`] },
+      });
+      break;
+    case "aspnet":
+      execs.push({
+        command: ["dotnet", "--list-runtimes"],
+        expect: {
+          stdout: [
+            `Microsoft.AspNetCore.App ${image.key} [/opt/dotnet/shared/Microsoft.AspNetCore.App]`,
+            `Microsoft.NETCore.App ${image.key} [/opt/dotnet/shared/Microsoft.NETCore.App]`,
+          ],
+          sorted: true,
+        },
+      });
+      break;
+  }
+  // The runtime host prints its usage and exits 129 for --help when no SDK is installed;
+  // --info is the host command every component answers with exit 0.
+  execs.push({ command: ["dotnet", "--info"], expect: { exitCode: 0 } });
+  return {
+    name: "smoke",
+    workspace,
+    testImage: testImageOf(`smoke-${image.component}`, [image]),
+    execs,
+    remoteEnv: remoteEnvOf(),
+  };
+};
+
 const createScenario = (name: ScenarioName, context: ScenarioContext): Scenario => {
+  if (name === "smoke") {
+    return smokeScenario(context);
+  }
+  const definition = definitions[name];
   const behavior = behaviors[name](context);
   return {
-    ...definitions[name],
     name,
     workspace: context.workspace,
-    testImage: testImageOf(name, context.selection),
+    testImage: testImageOf(name, componentsOf(name, context.selection)),
     execs: behavior.execs,
-    remoteEnv: behavior.remoteEnv,
+    remoteEnv: behavior.remoteEnv ?? remoteEnvOf(),
     serve: behavior.serve,
+    stage: async (workspace) => {
+      await staging.assets(workspace, definition.assets, definition.directories);
+      if (definition.app === undefined) {
+        return;
+      }
+      if (context.build === undefined) {
+        throw new Error(`The ${name} scenario needs the ${definition.app} app, but no build stage was created`);
+      }
+      await staging.app(workspace, path.join(context.build.path, appOutput(definition.app)));
+    },
     variants: (behavior.variants ?? []).map((variant) => materializeVariant(name, variant, context)),
   };
 };
 
-const createBuildStage = (apps: readonly AppName[], selection: Selection): BuildStage => ({
-  testImage: testImageOf("sdk", selection),
-  publishes: apps.map((app) => ({
+interface BuildStageContext {
+  selection: Selection;
+  workspace: Workspace;
+}
+
+const createBuildStage = (apps: readonly AppName[], { selection, workspace }: BuildStageContext): Scenario => ({
+  name: "build",
+  workspace,
+  testImage: testImageOf("sdk", componentsOf("sdk", selection)),
+  execs: apps.map((app) => ({
     command: [
       ...["dotnet", "publish", `${app}/${app}.csproj`],
       ...["--configuration", "Release"],
@@ -302,26 +402,12 @@ const createBuildStage = (apps: readonly AppName[], selection: Selection): Build
     env: { DefaultTargetFramework: selection.tfm },
     expect: { stdout: [] },
   })),
+  remoteEnv: remoteEnvOf(),
+  stage: (staged) => staging.assets(staged, apps, []),
 });
 
-const select = (values: readonly string[]): ScenarioName[] => {
-  if (values.length === 0) {
-    return [...names];
-  }
-  const selected = values.map((value) => {
-    const name = names.find((candidate) => candidate === value);
-    if (name === undefined) {
-      throw new Error(`--scenario must be one of: ${names.join(", ")}`);
-    }
-    return name;
-  });
-  return names.filter((name) => selected.includes(name));
-};
-
 export const scenarios = {
-  apps: appNames,
-  appOutput,
+  appOf,
   create: createScenario,
   createBuildStage,
-  select,
 } as const;

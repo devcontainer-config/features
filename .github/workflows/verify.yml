@@ -1,0 +1,236 @@
+name: verify
+
+on:
+  workflow_call:
+    inputs:
+      feature:
+        description: The image-based feature id
+        required: true
+        type: string
+      binaries:
+        description: Whether the feature publishes a Feature binary
+        required: false
+        type: boolean
+        default: false
+      scenarios:
+        description: The verify scenarios, as a JSON array
+        required: true
+        type: string
+      runners:
+        description: The runners the verify and smoke jobs fan out over, as a JSON array of {label, arm64} objects
+        required: false
+        type: string
+        default: '[{"label":"ubuntu-latest","arm64":false},{"label":"ubuntu-24.04-arm","arm64":true}]'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      channel: ${{ steps.plan.outputs.channel }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+      smoke: ${{ steps.plan.outputs.smoke }}
+    steps:
+      - name: Checkout (GitHub)
+        uses: actions/checkout@v7
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+
+      - name: Plan the publishes
+        id: plan
+        uses: devcontainers/ci@v0.3
+        with:
+          cacheFrom: ghcr.io/${{ github.repository }}/devcontainer
+          push: never
+          runCmd: pnpm tsx scripts/tasks/features/pipeline.ts plan-publish --feature ${{ inputs.feature }} --runners "$RUNNERS" --ref "$REF" --pull-request "$PR_NUMBER" --prefix ghcr.io/${{ github.repository }}
+          env: |
+            REF=${{ github.ref }}
+            PR_NUMBER=${{ github.event.pull_request.number }}
+            RUNNERS=${{ inputs.runners }}
+            GH_TOKEN=${{ github.token }}
+
+  install-binaries:
+    needs: plan
+    if: inputs.binaries && needs.plan.outputs.matrix != ''
+    runs-on: ${{ matrix.label }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: linux-x64
+            label: ubuntu-latest
+            arm64: false
+          - rid: linux-arm64
+            label: ubuntu-24.04-arm
+            arm64: true
+    steps:
+      - name: Checkout (GitHub)
+        uses: actions/checkout@v7
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+
+      - name: Pack the Feature binary
+        uses: devcontainers/ci@v0.3
+        with:
+          cacheFrom: ghcr.io/${{ github.repository }}/devcontainer${{ matrix.arm64 && ':latest-linux-arm64' || '' }}
+          push: never
+          runCmd: pnpm tsx scripts/tasks/features/pipeline.ts pack-feature --feature ${{ inputs.feature }} --rid "$RID" --out .ci/feature
+          env: |
+            RID=${{ matrix.rid }}
+
+      - name: Upload the Feature archive
+        uses: actions/upload-artifact@v7
+        with:
+          name: feature-${{ matrix.rid }}
+          path: .ci/feature/${{ matrix.rid }}.tar
+
+  image:
+    needs:
+      - plan
+      - install-binaries
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.matrix != '' && (needs.install-binaries.result == 'success' || needs.install-binaries.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - name: Checkout (GitHub)
+        uses: actions/checkout@v7
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+
+      - name: Download the x64 Feature archive
+        if: inputs.binaries
+        uses: actions/download-artifact@v7
+        with:
+          name: feature-linux-x64
+          path: .ci/feature
+
+      - name: Download the arm64 Feature archive
+        if: inputs.binaries
+        uses: actions/download-artifact@v7
+        with:
+          name: feature-linux-arm64
+          path: .ci/feature
+
+      - name: Publish the image
+        uses: devcontainers/ci@v0.3
+        with:
+          cacheFrom: ghcr.io/${{ github.repository }}/devcontainer
+          push: never
+          runCmd: pnpm tsx scripts/tasks/features/pipeline.ts publish-image --feature ${{ inputs.feature }} --component ${{ matrix.component }} --version ${{ matrix.key }} --channel "$CHANNEL" --prefix ghcr.io/${{ github.repository }} ${{ inputs.binaries && '--install-dir .ci/feature' || '' }}
+          env: |
+            CHANNEL=${{ needs.plan.outputs.channel }}
+            GH_TOKEN=${{ github.token }}
+
+  verify:
+    needs:
+      - plan
+      - image
+    if: ${{ !cancelled() && needs.plan.result == 'success' && (needs.image.result == 'success' || needs.image.result == 'skipped') }}
+    runs-on: ${{ matrix.runner.label }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: ${{ fromJSON(inputs.runners) }}
+        scenario: ${{ fromJSON(inputs.scenarios) }}
+    steps:
+      - name: Checkout (GitHub)
+        uses: actions/checkout@v7
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+
+      - name: Verify the images
+        uses: devcontainers/ci@v0.3
+        with:
+          cacheFrom: ghcr.io/${{ github.repository }}/devcontainer${{ matrix.runner.arm64 && ':latest-linux-arm64' || '' }}
+          push: never
+          runCmd: pnpm verify ${{ inputs.feature }} --scenario ${{ matrix.scenario }} --images pull --channel "$CHANNEL" --prefix ghcr.io/${{ github.repository }}
+          env: |
+            CHANNEL=${{ needs.plan.outputs.channel }}
+            GH_TOKEN=${{ github.token }}
+
+  smoke:
+    needs:
+      - plan
+      - image
+    if: ${{ !cancelled() && needs.plan.result == 'success' && (needs.image.result == 'success' || needs.image.result == 'skipped') }}
+    runs-on: ${{ matrix.label }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.smoke) }}
+    steps:
+      - name: Checkout (GitHub)
+        uses: actions/checkout@v7
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+
+      - name: Smoke the image
+        uses: devcontainers/ci@v0.3
+        with:
+          cacheFrom: ghcr.io/${{ github.repository }}/devcontainer${{ matrix.arm64 && ':latest-linux-arm64' || '' }}
+          push: never
+          runCmd: pnpm verify ${{ inputs.feature }} --scenario smoke --component ${{ matrix.component }} --version ${{ matrix.key }} --images pull --channel "$CHANNEL" --prefix ghcr.io/${{ github.repository }}
+          env: |
+            CHANNEL=${{ needs.plan.outputs.channel }}
+            GH_TOKEN=${{ github.token }}
+
+  release-tags:
+    needs:
+      - plan
+      - image
+      - verify
+      - smoke
+    if: ${{ !cancelled() && needs.plan.result == 'success' && (needs.image.result == 'success' || needs.image.result == 'skipped') && needs.verify.result == 'success' && (needs.smoke.result == 'success' || needs.smoke.result == 'skipped') }}
+    permissions:
+      contents: write
+      packages: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (GitHub)
+        uses: actions/checkout@v7
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+
+      - name: Apply the release tags
+        uses: devcontainers/ci@v0.3
+        with:
+          cacheFrom: ghcr.io/${{ github.repository }}/devcontainer
+          push: never
+          runCmd: pnpm tsx scripts/tasks/features/pipeline.ts release-tags --feature ${{ inputs.feature }} --channel "$CHANNEL" --prefix ghcr.io/${{ github.repository }}
+          env: |
+            CHANNEL=${{ needs.plan.outputs.channel }}
+            GH_TOKEN=${{ github.token }}

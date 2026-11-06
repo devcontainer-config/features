@@ -4,10 +4,16 @@ import path from "node:path";
 import { $$ } from "@/scripts/shell.js";
 import { download } from "@/scripts/tasks/features/download.js";
 
-import type { Artifact, FeatureConfig, VersionEntry } from "./generateConfig.js";
+import type { DockerArch } from "../architecture.js";
+import { isFile } from "../architecture.js";
+import { payloadPath } from "../paths.js";
+import type { Artifact, FeatureConfig, Target, VersionEntry } from "./generateConfig.js";
 import { configPath, readConfig } from "./generateConfig.js";
-import type { DockerArch } from "./paths.js";
-import { paths } from "./paths.js";
+
+const targets: Record<DockerArch, Target> = {
+  amd64: "x86_64-unknown-linux-musl",
+  arm64: "aarch64-unknown-linux-musl",
+};
 
 const entries = [
   "rg",
@@ -45,18 +51,19 @@ export const sectionOf = (config: FeatureConfig, key: string): PayloadSection =>
 export const loadSection = async (key: string): Promise<PayloadSection> => sectionOf(await readConfig(), key);
 
 export const derive = (section: PayloadSection, arch: DockerArch): Payload => {
-  const target = paths.targets[arch];
+  const target = targets[arch];
+  const cache = payloadPath("ripgrep", "ripgrep", section.key, arch);
   return {
     key: section.key,
     target,
-    cache: paths.payloadPath(section.key, arch),
-    present: path.join(paths.payloadPath(section.key, arch), "rg"),
+    cache,
+    present: path.join(cache, "rg"),
     top: `ripgrep-${section.key}-${target}`,
     archive: section.entry[target],
   };
 };
 
-export const payloadPresent = (payload: Payload): Promise<boolean> => paths.isFile(payload.present);
+export const payloadPresent = (payload: Payload): Promise<boolean> => isFile(payload.present);
 
 export const ensurePayload = async (section: PayloadSection, arch: DockerArch, force: boolean): Promise<void> => {
   const payload = derive(section, arch);
@@ -82,7 +89,7 @@ export const ensurePayload = async (section: PayloadSection, arch: DockerArch, f
     ...entries.map((entry) => `${payload.top}/${entry}`),
   ]}`;
   for (const entry of entries) {
-    if (!(await paths.isFile(path.join(extractedPath, entry)))) {
+    if (!(await isFile(path.join(extractedPath, entry)))) {
       throw new Error(`${payload.archive.url}: the archive has no ${entry}`);
     }
   }

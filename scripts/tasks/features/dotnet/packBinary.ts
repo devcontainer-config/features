@@ -2,22 +2,23 @@ import path from "node:path";
 
 import { project$$ } from "@/scripts/shell.js";
 
-import type { Rid } from "./generateConfig.js";
+import type { Rid } from "../architecture.js";
+import { isFile } from "../architecture.js";
 import type { Assembly } from "./paths.js";
-import { paths } from "./paths.js";
+import { packPath } from "./paths.js";
 
 const packBinary = async (assembly: Assembly, rid: Rid, force: boolean): Promise<string> => {
-  const binaryPath = path.join(paths.packPath(assembly, rid), assembly);
-  if (!force && (await paths.isFile(binaryPath))) {
+  const binaryPath = path.join(packPath(assembly, rid), assembly);
+  if (!force && (await isFile(binaryPath))) {
     return binaryPath;
   }
   await project$$`dotnet publish ${[
     ...["--configuration", "Release"],
     ...["--runtime", rid],
     `features/dotnet/${assembly}/${assembly}.csproj`,
-    `-p:PublishDir=${paths.packPath(assembly, rid)}/`,
+    `-p:PublishDir=${packPath(assembly, rid)}/`,
   ]}`;
-  if (!(await paths.isFile(binaryPath))) {
+  if (!(await isFile(binaryPath))) {
     throw new Error(`dotnet publish did not produce ${binaryPath}`);
   }
   return binaryPath;

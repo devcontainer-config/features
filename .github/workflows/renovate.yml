@@ -34,6 +34,6 @@ jobs:
         with:
           cacheFrom: ghcr.io/${{ github.repository }}/devcontainer
           push: never
-          runCmd: pnpm tsx scripts/tasks/features/${{ matrix.feature }}/renovate.ts
+          runCmd: pnpm tsx scripts/tasks/features/pipeline.ts renovate --feature ${{ matrix.feature }}
           env: |
             GH_TOKEN=${{ secrets.RENOVATE_TOKEN }}

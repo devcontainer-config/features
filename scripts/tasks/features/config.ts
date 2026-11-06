@@ -1,6 +1,34 @@
 export const tagPattern = /^[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127}$/u;
 
+// The names a key derives before any channel suffix; tagNames takes the first as canonical.
+export const mainTagNames = (key: string, revision: number, aliases: readonly string[]): readonly string[] => [
+  `${key}-r${revision}`,
+  key,
+  ...aliases,
+];
+
 export type AliasTable = Readonly<Record<string, readonly string[]>>;
+
+export interface ConfigNamespace {
+  name: string;
+  versions: Readonly<Record<string, unknown>>;
+  aliases: AliasTable;
+}
+
+export interface ConfigDocument {
+  revision: number;
+  namespaces: readonly ConfigNamespace[];
+}
+
+export interface ConfigEntry {
+  component: string;
+  key: string;
+}
+
+export const configEntries = (document: ConfigDocument): ConfigEntry[] =>
+  document.namespaces.flatMap((namespace) =>
+    Object.keys(namespace.versions).map((key) => ({ component: namespace.name, key })),
+  );
 
 export interface TagNamespace {
   source: string;
@@ -56,7 +84,7 @@ export const checkTagNamespace = (namespace: TagNamespace): void => {
   }
   const owners = new Map<string, string>();
   for (const key of Object.keys(versions)) {
-    for (const name of [`${key}-r${revision}`, key, ...aliases[key]]) {
+    for (const name of mainTagNames(key, revision, aliases[key])) {
       if (!tagPattern.test(name)) {
         throw new Error(`${source}: tag ${name} derived by ${key} is not a valid registry tag name`);
       }

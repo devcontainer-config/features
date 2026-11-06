@@ -1,16 +1,11 @@
 import { $ } from "execa";
 
+import type { ImageEntry } from "./imageEntries.js";
 import { login } from "./registry.js";
 
 const $$inspect = $({ reject: false, stdio: "ignore" });
 
-export interface ReleaseEntry {
-  label: string;
-  canonical: string;
-  tags: readonly string[];
-}
-
-export const releaseTags = async (entries: readonly ReleaseEntry[], prefix: string): Promise<void> => {
+export const releaseTags = async (entries: readonly ImageEntry[], prefix: string): Promise<void> => {
   await login(prefix);
   for (const entry of entries) {
     const inspect = await $$inspect`docker buildx imagetools inspect ${entry.canonical}`;
@@ -19,7 +14,7 @@ export const releaseTags = async (entries: readonly ReleaseEntry[], prefix: stri
     }
   }
   for (const entry of entries) {
-    await $`docker buildx imagetools create ${entry.tags.flatMap((tag) => ["--tag", tag])} ${entry.canonical}`;
-    console.log(`${entry.label}: applied ${entry.tags.join(", ")} to ${entry.canonical}`);
+    await $`docker buildx imagetools create ${entry.claims.flatMap((tag) => ["--tag", tag])} ${entry.canonical}`;
+    console.log(`${entry.label}: applied ${entry.claims.join(", ")} to ${entry.canonical}`);
   }
 };

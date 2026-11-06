@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import path from "node:path";
 
 import { Octokit } from "@octokit/rest";
 import git from "isomorphic-git";
@@ -6,6 +7,9 @@ import http from "isomorphic-git/http/node";
 
 import { getRemoteInfo } from "@/scripts/git.js";
 import { projectRoot } from "@/scripts/project.js";
+
+import type { ConfigDocument } from "./config.js";
+import type { Feature } from "./feature.js";
 
 const textDecoder = new TextDecoder();
 
@@ -24,17 +28,6 @@ export const headFile = async (oid: string, filepath: string): Promise<string | 
     throw error;
   }
 };
-
-export interface ConfigNamespace {
-  name: string;
-  versions: Readonly<Record<string, unknown>>;
-  aliases: Readonly<Record<string, readonly string[]>>;
-}
-
-export interface ConfigDocument {
-  revision: number;
-  namespaces: readonly ConfigNamespace[];
-}
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -128,37 +121,20 @@ const emptyDocument = (document: ConfigDocument): ConfigDocument => ({
   namespaces: document.namespaces.map(({ name }) => ({ name, versions: {}, aliases: {} })),
 });
 
-export interface FeatureConfigRefresh<Config> {
-  branch: string;
-  title: string;
-  filepath: string;
-  generate: () => Promise<void>;
-  read: () => Promise<Config>;
-  parse: (text: string, source: string) => Config;
-  document: (config: Config) => ConfigDocument;
-}
-
-// A refresh regenerates the config, then compares it against HEAD and opens or updates the feature's branch.
-export const refreshFeatureConfig = async <Config>(
-  options: FeatureConfigRefresh<Config>,
-  dryRun: boolean,
-): Promise<void> => {
-  await options.generate();
+export const refreshFeature = async (feature: Feature, dryRun: boolean): Promise<void> => {
+  await feature.generateConfig();
+  const filepath = path.relative(projectRoot, feature.configPath);
   await refresh(
     {
-      branch: options.branch,
-      title: options.title,
-      filepath: options.filepath,
+      branch: `renovate-${feature.id}`,
+      title: `Update ${feature.id} version pins`,
+      filepath,
       body: async (headOid) => {
-        const text = await headFile(headOid, options.filepath);
-        const previous = text === undefined ? undefined : options.parse(text, `${options.filepath} at HEAD`);
-        const next = options.document(await options.read());
-        const changes = configChanges(
-          previous === undefined ? emptyDocument(next) : options.document(previous),
-          next,
-          options.filepath,
-        );
-        return changeBody(changes, options.filepath);
+        const text = await headFile(headOid, filepath);
+        const previous = text === undefined ? undefined : feature.parseDocument(text, `${filepath} at HEAD`);
+        const next = await feature.document();
+        const changes = configChanges(previous ?? emptyDocument(next), next, filepath);
+        return changeBody(changes, filepath);
       },
     },
     dryRun,

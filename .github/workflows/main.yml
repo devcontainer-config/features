@@ -13,7 +13,15 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: ubuntu-latest
+            arm64: false
+          - label: ubuntu-24.04-arm
+            arm64: true
+    runs-on: ${{ matrix.label }}
     steps:
       - name: Checkout (GitHub)
         uses: actions/checkout@v7
@@ -29,11 +37,14 @@ jobs:
         uses: devcontainers/ci@v0.3
         with:
           imageName: ghcr.io/${{ github.repository }}/devcontainer
-          cacheFrom: ghcr.io/${{ github.repository }}/devcontainer
+          cacheFrom: ghcr.io/${{ github.repository }}/devcontainer${{ matrix.arm64 && ':latest-linux-arm64' || '' }}
           push: filter
           refFilterForPush: refs/heads/main
+          platform: ${{ matrix.arm64 && 'linux/arm64' || '' }}
+          useNativeRunner: ${{ matrix.arm64 }}
 
       - name: Lint
+        if: ${{ !matrix.arm64 }}
         uses: devcontainers/ci@v0.3
         with:
           cacheFrom: ghcr.io/${{ github.repository }}/devcontainer
@@ -41,6 +52,7 @@ jobs:
           runCmd: pnpm lint
 
       - name: Test
+        if: ${{ !matrix.arm64 }}
         uses: devcontainers/ci@v0.3
         with:
           cacheFrom: ghcr.io/${{ github.repository }}/devcontainer

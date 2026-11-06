@@ -14,6 +14,8 @@ export const configPath = path.resolve(projectRoot, "features/dotnet/config.json
 export const components = ["sdk", "runtime", "aspnet"] as const;
 export type Component = (typeof components)[number];
 
+export const componentSchema = z.enum(components);
+
 export const rids = ["linux-x64", "linux-arm64"] as const;
 export type Rid = (typeof rids)[number];
 
@@ -83,7 +85,7 @@ const componentConfigSchema = z.strictObject({
 });
 
 export const featureConfigSchema = z.strictObject({
-  revision: z.number(),
+  revision: z.int().min(1),
   components: z.strictObject({
     sdk: componentConfigSchema,
     runtime: componentConfigSchema,
@@ -248,12 +250,3 @@ export const generateConfig = async (): Promise<void> => {
     await prettier.format(JSON.stringify(config), { ...prettierOptions, filepath: configPath }),
   );
 };
-
-if (import.meta.main) {
-  try {
-    await generateConfig();
-  } catch (error) {
-    console.error(error);
-    process.exitCode = 1;
-  }
-}

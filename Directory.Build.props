@@ -7,6 +7,12 @@
     <DirectoryPackagesPropsPath>$(ConfigDirectory)Packages.props</DirectoryPackagesPropsPath>
     <DefaultTargetFramework>net10.0</DefaultTargetFramework>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(ArtifactsProjectName)' == ''">
+    <ArtifactsProjectName>$([MSBuild]::MakeRelative($(ProjectRoot), $(MSBuildProjectDirectory)))</ArtifactsProjectName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ArtifactsProjectName)' == '.'">
+    <ArtifactsProjectName>$(MSBuildProjectName)</ArtifactsProjectName>
+  </PropertyGroup>
 
   <Import Project="$(ConfigDirectory)Project.props" />
 </Project>

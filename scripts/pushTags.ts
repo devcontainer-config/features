@@ -4,8 +4,11 @@ import path from "node:path";
 import git from "isomorphic-git";
 import { readBlob } from "isomorphic-git";
 import http from "isomorphic-git/http/node";
+import { z } from "zod";
 
 import { projectRoot } from "@/scripts/project.js";
+
+const featureManifestSchema = z.object({ version: z.string().min(1) });
 
 const defaultBranch = "main";
 const remote = (await git.listRemotes({ fs, dir: projectRoot })).at(0);
@@ -42,7 +45,7 @@ for (const filepath of files) {
       oid: remoteHead,
       filepath,
     });
-    const { version } = JSON.parse(decoder.decode(blob)) as { version: string };
+    const { version } = featureManifestSchema.parse(JSON.parse(decoder.decode(blob)));
     const tag = `${path.basename(path.dirname(filepath))}_${version}`;
     if (tags.has(tag)) {
       console.log(`Tag ${tag} already exists, skipping...`);

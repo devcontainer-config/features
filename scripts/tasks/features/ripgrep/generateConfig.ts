@@ -43,7 +43,7 @@ const versionEntrySchema = z.strictObject({
 const aliasTableSchema = z.record(z.string(), z.array(z.string()));
 
 export const featureConfigSchema = z.strictObject({
-  revision: z.number(),
+  revision: z.int().min(1),
   versions: z.record(z.string(), versionEntrySchema),
   aliases: aliasTableSchema,
 });
@@ -183,12 +183,3 @@ export const generateConfig = async (): Promise<void> => {
     await prettier.format(JSON.stringify(config), { ...prettierOptions, filepath: configPath }),
   );
 };
-
-if (import.meta.main) {
-  try {
-    await generateConfig();
-  } catch (error) {
-    console.error(error);
-    process.exitCode = 1;
-  }
-}
