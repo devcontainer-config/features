@@ -1,3 +1,7 @@
+import * as prettier from "prettier";
+
+import prettierOptions from "@/.config/prettier/.prettierrc.json" with { type: "json" };
+
 export const tagPattern = /^[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127}$/u;
 
 // The names a key derives before any channel suffix; tagNames takes the first as canonical.
@@ -96,3 +100,6 @@ export const checkTagNamespace = (namespace: TagNamespace): void => {
     }
   }
 };
+
+export const formatConfig = async (document: unknown, configPath: string): Promise<string> =>
+  prettier.format(JSON.stringify(document, null, 2), { ...prettierOptions, filepath: configPath });

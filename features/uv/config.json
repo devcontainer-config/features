@@ -14,7 +14,9 @@
           }
         }
       },
-      "aliases": { "0.13.7": ["0.13", "latest"] }
+      "aliases": {
+        "0.13.7": ["0.13", "latest"]
+      }
     },
     "python": {
       "versions": {
