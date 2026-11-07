@@ -13,6 +13,7 @@ import prettierOptions from "@/.config/prettier/.prettierrc.json" with { type: "
 import { getRemoteInfo } from "@/scripts/git.js";
 import { projectRoot } from "@/scripts/project.js";
 import { shellOptions } from "@/scripts/shell.js";
+import { featureConfigs } from "@/scripts/tasks/featureConfigs.js";
 import { imageFeatures } from "@/scripts/tasks/imageFeatures.js";
 
 const formatFile = async (path: string) => {
@@ -56,5 +57,6 @@ export const build = async () => {
     await rm(tempPath, { recursive: true, force: true });
   }
 
+  await featureConfigs.write();
   await imageFeatures.write();
 };

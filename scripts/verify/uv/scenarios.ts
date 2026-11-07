@@ -85,7 +85,7 @@ const pythonExecutable = (selection: Selection, pythonVersion: string): string =
   `${pythonPatchDir(selection, pythonVersion)}/bin/python${minorOf(pythonVersion)}`;
 
 const pythonListLine = (selection: Selection, pythonVersion: string): string =>
-  `${pythonKey(selection, pythonVersion)}    ${pythonMinorDir(selection, pythonVersion)}/bin/python${minorOf(pythonVersion)}`;
+  `${pythonKey(selection, pythonVersion)} ${pythonMinorDir(selection, pythonVersion)}/bin/python${minorOf(pythonVersion)}`;
 
 const linkTarget = (name: string, target: string): Exec => ({
   command: ["sh", "-c", `readlink -f "$XDG_BIN_HOME/${name}"`],
@@ -126,7 +126,7 @@ const pythonExecs = (selection: Selection): Exec[] => {
     { command: ["cat", `${featureDir}/default-python`], expect: { stdout: [pythonVersion] } },
     {
       command: ["uv", "python", "list", "--only-installed"],
-      expect: { stdout: [pythonListLine(selection, pythonVersion)] },
+      expect: { stdout: [pythonListLine(selection, pythonVersion)], fields: true },
     },
     linkTarget("python", pythonExecutable(selection, pythonVersion)),
     linkTarget("python3", pythonExecutable(selection, pythonVersion)),
@@ -147,7 +147,7 @@ const pythonRestartExecs = (selection: Selection): Exec[] => {
     { command: ["cat", `${featureDir}/default-python`], expect: { stdout: [pythonVersion] } },
     {
       command: ["uv", "python", "list", "--only-installed"],
-      expect: { stdout: [pythonListLine(selection, pythonVersion)] },
+      expect: { stdout: [pythonListLine(selection, pythonVersion)], fields: true },
     },
     linkTarget("python", pythonExecutable(selection, pythonVersion)),
     linkTarget("python3", pythonExecutable(selection, pythonVersion)),
@@ -162,7 +162,7 @@ const multiExecs = (selection: Selection): Exec[] => {
   return [
     {
       command: ["uv", "python", "list", "--only-installed"],
-      expect: { stdout: [pythonListLine(selection, latest), pythonListLine(selection, previous)] },
+      expect: { stdout: [pythonListLine(selection, latest), pythonListLine(selection, previous)], fields: true },
     },
     linkTarget(`python${minorOf(latest)}`, pythonExecutable(selection, latest)),
     linkTarget(`python${minorOf(previous)}`, pythonExecutable(selection, previous)),
@@ -178,7 +178,7 @@ const downloadExecs = (selection: Selection): Exec[] => {
   return [
     {
       command: ["uv", "python", "list", "--only-installed"],
-      expect: { stdout: [pythonListLine(selection, pythonVersion)] },
+      expect: { stdout: [pythonListLine(selection, pythonVersion)], fields: true },
     },
     linkTarget("python", pythonExecutable(selection, pythonVersion)),
     linkTarget("python3", pythonExecutable(selection, pythonVersion)),
@@ -201,7 +201,7 @@ const smokeExecs = (selection: Selection, component: Component): Exec[] => {
       { command: ["sh", "-c", '"$XDG_BIN_HOME/python" -V'], expect: { stdout: [`Python ${pythonVersion}`] } },
       {
         command: ["uv", "python", "list", "--only-installed"],
-        expect: { stdout: [pythonListLine(selection, pythonVersion)] },
+        expect: { stdout: [pythonListLine(selection, pythonVersion)], fields: true },
       },
     );
   }

@@ -1,12 +1,10 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import * as prettier from "prettier";
 import { z } from "zod";
 
-import prettierOptions from "@/.config/prettier/.prettierrc.json" with { type: "json" };
 import { projectRoot } from "@/scripts/project.js";
-import { checkTagNamespace } from "@/scripts/tasks/features/config.js";
+import { checkTagNamespace, formatConfig } from "@/scripts/tasks/features/config.js";
 
 import type { DockerArch, Rid } from "../architecture.js";
 import { dockerArchOptions, ridFor, rids } from "../architecture.js";
@@ -274,8 +272,5 @@ export const generateConfig = async (): Promise<void> => {
     },
   };
   validateConfig(config, configPath);
-  await writeFile(
-    configPath,
-    await prettier.format(JSON.stringify(config), { ...prettierOptions, filepath: configPath }),
-  );
+  await writeFile(configPath, await formatConfig(config, configPath));
 };
