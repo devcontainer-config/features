@@ -2,7 +2,7 @@
 set -e
 
 mkdir -p /usr/local/bin
-cp -p rg /usr/local/bin/rg
+ln -sfn "$PWD/rg" /usr/local/bin/rg
 
 mkdir -p /usr/local/share/man/man1
 cp -p doc/rg.1 /usr/local/share/man/man1/rg.1

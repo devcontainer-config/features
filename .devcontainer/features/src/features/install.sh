@@ -7,8 +7,6 @@
 
 set -e
 
-feature_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
-
 prefix=/opt/devcontainer-config
 state_path=/var/lib/devcontainer-config/features
 
@@ -20,11 +18,11 @@ case $FEATURES_PATH in
 esac
 
 mkdir -p "$prefix"
-install -m 0755 "$feature_dir/features-run" "$prefix/features-run"
+install -m 0755 ./features-run "$prefix/features-run"
 
 printf '%s\n' "$FEATURES_PATH" > "$prefix/features-path"
 
 mkdir -p "$FEATURES_PATH" "$state_path"
-chmod a+rwx "$FEATURES_PATH" "$state_path"
+chmod a+rwx "$state_path"
 
 exec "$prefix/features-run" install

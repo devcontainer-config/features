@@ -1,3 +1,5 @@
+using DevcontainerConfig.Features;
+
 namespace DevcontainerConfig.Dotnet.Feature;
 
 internal static class Registration
@@ -24,19 +26,7 @@ internal static class Registration
     private static void CreateSymlink(string root)
     {
         string target = Path.Join(root, "dotnet");
-
-        // rename(2) replaces whatever else the path holds (absent, symlink or regular file) and never resolves the
-        // destination, so the link lands in one step; a real directory fails the rename.
-        string temp = Path.Join(Path.GetDirectoryName(LinkPath), $".dotnet-{Guid.NewGuid():N}");
-        File.CreateSymbolicLink(temp, target);
-        try
-        {
-            File.Move(temp, LinkPath, overwrite: true);
-        }
-        finally
-        {
-            File.Delete(temp);
-        }
+        SymbolicLink.Replace(LinkPath, target);
         Console.WriteLine($"install: linked {LinkPath} to {target}");
     }
 

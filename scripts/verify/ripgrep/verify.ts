@@ -45,6 +45,10 @@ const defaultExecs = (version: string): Exec[] => [
     expect: { stdout: ["/usr/local/bin/rg"] },
   },
   {
+    command: ["readlink", "-f", "/usr/local/bin/rg"],
+    expect: { stdout: ["/opt/devcontainer-config/features/ripgrep/rg"] },
+  },
+  {
     command: ["sh", "-c", "printf 'alpha\\nbeta\\n' | rg beta"],
     expect: { stdout: ["beta"] },
   },

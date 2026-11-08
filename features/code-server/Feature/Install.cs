@@ -5,7 +5,6 @@ namespace DevcontainerConfig.CodeServer.Feature;
 internal static class Install
 {
     private const string BinDir = "/usr/local/bin";
-    private const string LinkPath = "/usr/local/bin/code-server";
 
     internal static void Run(string stagedDir)
     {
@@ -13,7 +12,9 @@ internal static class Install
         options.Validate();
 
         Directory.CreateDirectory(BinDir);
-        File.Delete(LinkPath);
-        File.CreateSymbolicLink(LinkPath, Path.Join(stagedDir, "code-server", "bin", "code-server"));
+        SymbolicLink.Replace(
+            Path.Join(BinDir, "code-server"),
+            Path.Join(stagedDir, "code-server", "bin", "code-server")
+        );
     }
 }

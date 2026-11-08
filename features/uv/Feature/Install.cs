@@ -33,8 +33,7 @@ internal static class Install
         Directory.CreateDirectory(BinDir);
         foreach (string binary in Binaries)
         {
-            string target = Path.Join(BinDir, binary);
-            File.Copy(Path.Join(stagedDir, "uv", binary), target, overwrite: true);
+            SymbolicLink.Replace(Path.Join(BinDir, binary), Path.Join(stagedDir, "uv", binary));
         }
     }
 }
