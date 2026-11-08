@@ -1,5 +1,3 @@
-using DevcontainerConfig.Features;
-
 namespace DevcontainerConfig.Dotnet.Feature;
 
 internal static class Registration
@@ -26,13 +24,9 @@ internal static class Registration
     private static void CreateSymlink(string root)
     {
         string target = Path.Join(root, "dotnet");
-        if (Directory.Exists(LinkPath))
-        {
-            throw new FeatureException($"{LinkPath} is a directory.");
-        }
 
         // rename(2) replaces whatever else the path holds (absent, symlink or regular file) and never resolves the
-        // destination, so the link lands in one step.
+        // destination, so the link lands in one step; a real directory fails the rename.
         string temp = Path.Join(Path.GetDirectoryName(LinkPath), $".dotnet-{Guid.NewGuid():N}");
         File.CreateSymbolicLink(temp, target);
         try

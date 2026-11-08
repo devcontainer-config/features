@@ -1,0 +1,18 @@
+{
+  "revision": 1,
+  "versions": {
+    "4.145.2": {
+      "linux-x64": {
+        "url": "https://github.com/coder/code-server/releases/download/v4.145.2/code-server-4.145.2-linux-amd64.tar.gz",
+        "sha256": "2f6db6c3e8b733dd6b3aeee83532e148b2bae2e392353ba85452d03572348962"
+      },
+      "linux-arm64": {
+        "url": "https://github.com/coder/code-server/releases/download/v4.145.2/code-server-4.145.2-linux-arm64.tar.gz",
+        "sha256": "e867a34416e2da4a83496b09580001893e7a4e5bb58a0624c4fcd22819e7d53d"
+      }
+    }
+  },
+  "aliases": {
+    "4.145.2": ["4.145", "4", "latest"]
+  }
+}

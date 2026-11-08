@@ -31,3 +31,14 @@ export const isFile = async (candidate: string): Promise<boolean> => {
     throw error;
   }
 };
+
+export const isDirectory = async (candidate: string): Promise<boolean> => {
+  try {
+    return (await stat(candidate)).isDirectory();
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return false;
+    }
+    throw error;
+  }
+};

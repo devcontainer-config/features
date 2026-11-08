@@ -1,12 +1,35 @@
 import { mkdir, rm } from "node:fs/promises";
 import path from "node:path";
 
-import { extractTar } from "@/scripts/tasks/features/tar.js";
+import { project$$ } from "@/scripts/shell.js";
 
-import type { DockerArch } from "./architecture.js";
+import type { DockerArch, Rid } from "./architecture.js";
 import { dockerArchOptions, hostArch, isFile, ridFor } from "./architecture.js";
 import type { Feature } from "./feature.js";
 import { requireBinary } from "./feature.js";
+import { extractTar } from "./tar.js";
+
+export const ensureFeatureBinary = async (
+  csproj: string,
+  directory: string,
+  rid: Rid,
+  force: boolean,
+): Promise<string> => {
+  const binaryPath = path.join(directory, "Feature");
+  if (!force && (await isFile(binaryPath))) {
+    return binaryPath;
+  }
+  await project$$`dotnet publish ${[
+    ...["--configuration", "Release"],
+    ...["--runtime", rid],
+    csproj,
+    `-p:PublishDir=${directory}/`,
+  ]}`;
+  if (!(await isFile(binaryPath))) {
+    throw new Error(`dotnet publish did not produce ${binaryPath}`);
+  }
+  return binaryPath;
+};
 
 const localBinary = async (binary: NonNullable<Feature["binary"]>, arch: DockerArch): Promise<string> => {
   if (arch !== hostArch()) {

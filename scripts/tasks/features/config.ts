@@ -1,4 +1,7 @@
+import { readFile, writeFile } from "node:fs/promises";
+
 import * as prettier from "prettier";
+import { z } from "zod";
 
 import prettierOptions from "@/.config/prettier/.prettierrc.json" with { type: "json" };
 
@@ -103,3 +106,46 @@ export const checkTagNamespace = (namespace: TagNamespace): void => {
 
 export const formatConfig = async (document: unknown, configPath: string): Promise<string> =>
   prettier.format(JSON.stringify(document, null, 2), { ...prettierOptions, filepath: configPath });
+
+export interface ConfigFile<T> {
+  parse: (text: string, source: string) => T;
+  read: () => Promise<T>;
+  /** The document's revision on disk, 1 when the file does not exist yet. */
+  revision: () => Promise<number>;
+  /** Validates the document, then writes it canonically. */
+  write: (config: T) => Promise<void>;
+}
+
+export const configFile = <S extends z.ZodType<{ revision: number }>>(options: {
+  path: string;
+  schema: S;
+  validate: (config: z.infer<S>, source: string) => void;
+}): ConfigFile<z.infer<S>> => {
+  const parse = (text: string, source: string): z.infer<S> => {
+    const result = options.schema.safeParse(JSON.parse(text));
+    if (!result.success) {
+      throw new Error(`${source}: ${z.prettifyError(result.error)}`);
+    }
+    options.validate(result.data, source);
+    return result.data;
+  };
+  const read = async (): Promise<z.infer<S>> => parse(await readFile(options.path, "utf-8"), options.path);
+  return {
+    parse,
+    read,
+    revision: async () => {
+      try {
+        return (await read()).revision;
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+          return 1;
+        }
+        throw error;
+      }
+    },
+    write: async (config) => {
+      options.validate(config, options.path);
+      await writeFile(options.path, await formatConfig(config, options.path));
+    },
+  };
+};

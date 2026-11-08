@@ -1,10 +1,9 @@
-import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { z } from "zod";
 
 import { projectRoot } from "@/scripts/project.js";
-import { checkTagNamespace, formatConfig } from "@/scripts/tasks/features/config.js";
+import { checkTagNamespace, configFile } from "@/scripts/tasks/features/config.js";
 
 const releasesIndexUrl = "https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json";
 export const configPath = path.resolve(projectRoot, "features/dotnet/config.json");
@@ -208,40 +207,21 @@ const validateConfig = (config: FeatureConfig, source: string): void => {
   }
 };
 
-export const parseConfig = (text: string, source: string): FeatureConfig => {
-  const result = featureConfigSchema.safeParse(JSON.parse(text));
-  if (!result.success) {
-    throw new Error(`${source}: ${z.prettifyError(result.error)}`);
-  }
-  validateConfig(result.data, source);
-  return result.data;
-};
+const config = configFile({ path: configPath, schema: featureConfigSchema, validate: validateConfig });
 
-export const readConfig = async (): Promise<FeatureConfig> =>
-  parseConfig(await readFile(configPath, "utf-8"), configPath);
-
-const readRevision = async (): Promise<number> => {
-  try {
-    return (await readConfig()).revision;
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return 1;
-    }
-    throw error;
-  }
-};
+export const parseConfig = config.parse;
+export const readConfig = config.read;
 
 export const generateConfig = async (): Promise<void> => {
   const index = await fetchJson(releasesIndexUrl, releasesIndexSchema);
   const channelData = await fetchChannelData(selectChannels(index));
-  const config: FeatureConfig = {
-    revision: await readRevision(),
+  const document: FeatureConfig = {
+    revision: await config.revision(),
     components: {
       sdk: resolveComponentData("sdk", channelData),
       runtime: resolveComponentData("runtime", channelData),
       aspnet: resolveComponentData("aspnet", channelData),
     },
   };
-  validateConfig(config, configPath);
-  await writeFile(configPath, await formatConfig(config, configPath));
+  await config.write(document);
 };

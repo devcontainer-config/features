@@ -3,7 +3,7 @@ import type { Feature, FeatureStage } from "@/scripts/tasks/features/feature.js"
 
 import type { Component, FeatureConfig } from "./generateConfig.js";
 import { components, componentSchema, configPath, generateConfig, parseConfig, readConfig } from "./generateConfig.js";
-import { ensureFeatureBinary } from "./packBinary.js";
+import { packFeatureBinary } from "./packBinary.js";
 import { derive, ensurePayload, payloadPresent, sectionOf } from "./payload.js";
 
 const repositories: Record<Component, string> = { uv: "uv", python: "uv/python" };
@@ -37,6 +37,6 @@ export const uv: Feature = {
     present: async (component, key, arch) =>
       payloadPresent(derive(sectionOf(await readConfig(), componentSchema.parse(component), key), arch)),
   },
-  binary: { ensure: ensureFeatureBinary },
+  binary: { ensure: packFeatureBinary },
   gitTag: (component, canonical) => `features-uv-${componentSchema.parse(component)}-${canonical}`,
 };
