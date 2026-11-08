@@ -35,6 +35,11 @@
     "slsa",
     "uvx",
     "ndjson",
-    "venv"
+    "venv",
+    "cmdline",
+    "GLIBCXX",
+    "libstdc",
+    "noproxy",
+    "pgrep"
   ]
 }

@@ -1,0 +1,27 @@
+name: "code-server"
+
+on:
+  pull_request:
+    paths:
+      - "features/code-server/config.json"
+  push:
+    branches:
+      - main
+    paths:
+      - "features/code-server/config.json"
+  workflow_dispatch:
+
+concurrency:
+  group: "code-server-${{ github.ref }}"
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    uses: ./.github/workflows/verify.yml
+    permissions:
+      contents: write
+      packages: write
+    with:
+      feature: code-server
+      binaries: true
+      scenarios: '["default", "password", "socket", "args"]'

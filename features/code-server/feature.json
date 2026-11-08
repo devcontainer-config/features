@@ -1,0 +1,76 @@
+{
+  "id": "code-server",
+  "name": "code-server",
+  "description": "Installs the code-server standalone release and starts the server from postStart.",
+  "image": "ghcr.io/devcontainer-config/features/code-server",
+  "options": {
+    "auth": {
+      "type": "string",
+      "default": "none",
+      "description": "The authentication type, none or password. The default none gives anything that can reach the listen address the remote user's access."
+    },
+    "host": {
+      "type": "string",
+      "default": "127.0.0.1",
+      "description": "The address in --bind-addr when socket is empty. The default keeps the server on loopback."
+    },
+    "port": { "type": "integer", "default": 8080, "description": "The port in --bind-addr when socket is empty." },
+    "socket": {
+      "type": "string",
+      "default": "",
+      "description": "An absolute Unix socket path. When set, the socket is used instead of host and port."
+    },
+    "socketMode": {
+      "type": "string",
+      "default": "0600",
+      "description": "The file mode of the Unix socket, as octal digits. Used only when socket is set."
+    },
+    "workspace": {
+      "type": "string",
+      "default": "",
+      "description": "The positional workspace path. An empty value uses the hook's current directory."
+    },
+    "passwordFile": {
+      "type": "string",
+      "default": "",
+      "description": "A file read at postStart into PASSWORD. Trailing newlines are removed."
+    },
+    "hashedPasswordFile": {
+      "type": "string",
+      "default": "",
+      "description": "A file read at postStart into HASHED_PASSWORD. Takes precedence over passwordFile."
+    },
+    "githubAuthTokenFile": {
+      "type": "string",
+      "default": "",
+      "description": "A file read at postStart into GITHUB_TOKEN."
+    },
+    "disableTelemetry": { "type": "boolean", "default": true, "description": "Pass --disable-telemetry." },
+    "disableUpdateCheck": { "type": "boolean", "default": true, "description": "Pass --disable-update-check." },
+    "disableWorkspaceTrust": { "type": "boolean", "default": true, "description": "Pass --disable-workspace-trust." },
+    "disableFileDownloads": { "type": "boolean", "default": false, "description": "Pass --disable-file-downloads." },
+    "disableFileUploads": { "type": "boolean", "default": false, "description": "Pass --disable-file-uploads." },
+    "proxyDomain": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "One --proxy-domain argument per element."
+    },
+    "absProxyBasePath": { "type": "string", "default": "", "description": "Pass --abs-proxy-base-path." },
+    "trustedOrigins": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "One --trusted-origins argument per element."
+    },
+    "disableProxy": { "type": "boolean", "default": false, "description": "Pass --disable-proxy." },
+    "locale": { "type": "string", "default": "", "description": "Pass --locale." },
+    "verbose": { "type": "boolean", "default": false, "description": "Pass --verbose." },
+    "args": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "One code-server argument per element, appended after the option-derived arguments."
+    }
+  }
+}

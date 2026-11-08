@@ -1,10 +1,9 @@
-import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { z } from "zod";
 
 import { projectRoot } from "@/scripts/project.js";
-import { checkTagNamespace, formatConfig } from "@/scripts/tasks/features/config.js";
+import { checkTagNamespace, configFile } from "@/scripts/tasks/features/config.js";
 
 import type { DockerArch, Rid } from "../architecture.js";
 import { dockerArchOptions, ridFor, rids } from "../architecture.js";
@@ -226,35 +225,17 @@ const validateConfig = (config: FeatureConfig, source: string): void => {
   validatePython(config, `${source} component python`);
 };
 
-export const parseConfig = (text: string, source: string): FeatureConfig => {
-  const result = featureConfigSchema.safeParse(JSON.parse(text));
-  if (!result.success) {
-    throw new Error(`${source}: ${z.prettifyError(result.error)}`);
-  }
-  validateConfig(result.data, source);
-  return result.data;
-};
+const config = configFile({ path: configPath, schema: featureConfigSchema, validate: validateConfig });
 
-export const readConfig = async (): Promise<FeatureConfig> =>
-  parseConfig(await readFile(configPath, "utf-8"), configPath);
-
-const readRevision = async (): Promise<number> => {
-  try {
-    return (await readConfig()).revision;
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return 1;
-    }
-    throw error;
-  }
-};
+export const parseConfig = config.parse;
+export const readConfig = config.read;
 
 export const generateConfig = async (): Promise<void> => {
   const uvRelease = trackedUvRelease(parseIndex(await fetchText(uvIndexUrl), uvIndexUrl));
   const pythonReleases = parseIndex(await fetchText(pythonIndexUrl), pythonIndexUrl);
   const [major, minor] = uvRelease.version.split(".");
-  const config: FeatureConfig = {
-    revision: await readRevision(),
+  const document: FeatureConfig = {
+    revision: await config.revision(),
     components: {
       uv: {
         versions: {
@@ -271,6 +252,5 @@ export const generateConfig = async (): Promise<void> => {
       python: await pythonVersions(pythonReleases),
     },
   };
-  validateConfig(config, configPath);
-  await writeFile(configPath, await formatConfig(config, configPath));
+  await config.write(document);
 };

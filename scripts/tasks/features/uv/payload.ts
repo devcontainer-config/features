@@ -1,8 +1,8 @@
 import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { $$ } from "@/scripts/shell.js";
 import { download } from "@/scripts/tasks/features/download.js";
+import { stageTarball } from "@/scripts/tasks/features/tarball.js";
 
 import type { DockerArch } from "../architecture.js";
 import { isFile, ridFor } from "../architecture.js";
@@ -186,35 +186,13 @@ export function derive(section: PayloadSection, arch: DockerArch): Payload {
 
 export const payloadPresent = (payload: Payload): Promise<boolean> => isFile(payload.present);
 
-const fetchUvPayload = async (payload: UvPayload): Promise<void> => {
-  const tempPath = `${payload.cache}.tmp`;
-  await rm(tempPath, { recursive: true, force: true });
-  const archivePath = path.join(tempPath, "archive.tar.gz");
-  const extractedPath = path.join(tempPath, "extracted");
-  await mkdir(extractedPath, { recursive: true });
-  const actual = await download(payload.archive.url, archivePath);
-  if (actual !== payload.archive.sha256) {
-    throw new Error(`${payload.archive.url}: sha256 ${actual} does not match the configured ${payload.archive.sha256}`);
-  }
-  const top = `uv-${payload.triple}`;
-  await $$`tar ${[
-    "-xzf",
-    archivePath,
-    "-C",
-    extractedPath,
-    "--strip-components=1",
-    ...uvBinaries.map((binary) => `${top}/${binary}`),
-  ]}`;
-  for (const binary of uvBinaries) {
-    if (!(await isFile(path.join(extractedPath, binary)))) {
-      throw new Error(`${payload.archive.url}: the archive has no ${binary}`);
-    }
-  }
-  await rm(payload.cache, { recursive: true, force: true });
-  await rename(extractedPath, payload.cache);
-  await rm(tempPath, { recursive: true, force: true });
-  console.log(`Payload written to ${payload.cache}`);
-};
+const fetchUvPayload = async (payload: UvPayload): Promise<void> =>
+  stageTarball({
+    cache: payload.cache,
+    url: payload.archive.url,
+    sha256: payload.archive.sha256,
+    extract: { top: `uv-${payload.triple}`, entries: uvBinaries },
+  });
 
 const fetchPythonPayload = async (payload: PythonPayload): Promise<void> => {
   const tempPath = `${payload.cache}.tmp`;

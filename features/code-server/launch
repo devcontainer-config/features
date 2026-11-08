@@ -1,0 +1,13 @@
+#!/bin/sh
+# launch <log> <command> [args...]
+#
+# Runs the command with its stdio detached from the caller's: stdin reads EOF,
+# and stdout and stderr append to <log>. The postStart hook returns at once and
+# the devcontainer CLI closes the hook's pipes with it, so the server must not
+# hold them.
+#
+# exec replaces this shell, so the PID the caller records is the command's.
+set -eu
+log=$1
+shift
+exec "$@" < /dev/null >> "$log" 2>&1

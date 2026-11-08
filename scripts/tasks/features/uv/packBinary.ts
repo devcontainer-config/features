@@ -1,24 +1,13 @@
 import path from "node:path";
 
-import { project$$ } from "@/scripts/shell.js";
+import { projectRoot, workspaces } from "@/scripts/project.js";
 
 import type { Rid } from "../architecture.js";
-import { isFile } from "../architecture.js";
-import { packPath } from "./paths.js";
+import { ensureFeatureBinary } from "../featureBinary.js";
 
-export const ensureFeatureBinary = async (rid: Rid, force: boolean): Promise<string> => {
-  const binaryPath = path.join(packPath(rid), "Feature");
-  if (!force && (await isFile(binaryPath))) {
-    return binaryPath;
-  }
-  await project$$`dotnet publish ${[
-    ...["--configuration", "Release"],
-    ...["--runtime", rid],
-    "features/uv/Feature/Feature.csproj",
-    `-p:PublishDir=${packPath(rid)}/`,
-  ]}`;
-  if (!(await isFile(binaryPath))) {
-    throw new Error(`dotnet publish did not produce ${binaryPath}`);
-  }
-  return binaryPath;
-};
+const csproj = path.resolve(projectRoot, "features/uv/Feature/Feature.csproj");
+
+const packPath = (rid: Rid): string => path.join(workspaces, "bin/uv/Feature", rid);
+
+export const packFeatureBinary = (rid: Rid, force: boolean): Promise<string> =>
+  ensureFeatureBinary(csproj, packPath(rid), rid, force);

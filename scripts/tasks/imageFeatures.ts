@@ -11,9 +11,12 @@ import { projectRoot } from "@/scripts/project.js";
 
 const featuresPath = path.resolve(projectRoot, "features");
 
+const optionDefaultSchema = z.union([z.string(), z.number(), z.boolean(), z.array(z.string())]);
+
 const optionSchema = z.strictObject({
   type: z.string(),
-  default: z.union([z.string(), z.number(), z.boolean()]),
+  items: z.strictObject({ type: z.union([z.string(), z.array(z.string())]) }).optional(),
+  default: optionDefaultSchema,
   description: z.string(),
 });
 
@@ -115,6 +118,9 @@ const optionsOf = async (id: string): Promise<Options | undefined> => {
   return result.data.properties;
 };
 
+const defaultText = (value: z.infer<typeof optionDefaultSchema>): string =>
+  Array.isArray(value) ? JSON.stringify(value) : String(value);
+
 const optionsTable = (options: Options): string => {
   const entries = Object.entries(options);
   if (entries.length === 0) {
@@ -126,7 +132,8 @@ const optionsTable = (options: Options): string => {
     "| Options Id | Description | Type | Default Value |",
     "| ---------- | ----------- | ---- | ------------- |",
     ...entries.map(
-      ([optionId, option]) => `| ${optionId} | ${option.description} | ${option.type} | ${option.default} |`,
+      ([optionId, option]) =>
+        `| ${optionId} | ${option.description} | ${option.type} | ${defaultText(option.default)} |`,
     ),
   ].join("\n");
 };
