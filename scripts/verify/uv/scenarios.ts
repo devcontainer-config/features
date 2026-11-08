@@ -113,7 +113,14 @@ const binariesExecs = (selection: Selection): Exec[] => [
     command: ["sh", "-c", "command -v uv; command -v uvx"],
     expect: { stdout: ["/usr/local/bin/uv", "/usr/local/bin/uvx"] },
   },
-  { command: ["stat", "-c", "%a", "/usr/local/bin/uv", "/usr/local/bin/uvx"], expect: { stdout: ["755", "755"] } },
+  {
+    command: ["readlink", "-f", "/usr/local/bin/uv", "/usr/local/bin/uvx"],
+    expect: { stdout: [`${featureDir}/uv/uv`, `${featureDir}/uv/uvx`] },
+  },
+  {
+    command: ["stat", "-Lc", "%a", "/usr/local/bin/uv", "/usr/local/bin/uvx"],
+    expect: { stdout: ["755", "755"] },
+  },
   {
     command: ["sh", "-c", `for file in ${completionFiles.join(" ")}; do test -s "$file" || exit 1; done; echo present`],
     expect: { stdout: ["present"] },
