@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { githubApiHeaders } from "./github.js";
+
 export type Version = readonly [number, number, number];
 
 export interface ReleaseAsset {
@@ -9,7 +11,7 @@ export interface ReleaseAsset {
 }
 
 export interface TrackedRelease {
-  /** The release tag with its `v` prefix removed. */
+  // The release tag with its `v` prefix removed.
   version: string;
   number: Version;
   assets: readonly ReleaseAsset[];
@@ -55,7 +57,7 @@ const fetchReleases = async (repository: string): Promise<z.infer<typeof release
   const releases: z.infer<typeof releasesPageSchema> = [];
   for (let page = 1; ; page++) {
     const url = `https://api.github.com/repos/${repository}/releases?per_page=100&page=${page}`;
-    const response = await fetch(url, { headers: { accept: "application/vnd.github+json" } });
+    const response = await fetch(url, { headers: githubApiHeaders() });
     if (!response.ok) {
       throw new Error(`GET ${url} → HTTP ${response.status}`);
     }
@@ -70,7 +72,7 @@ const fetchReleases = async (repository: string): Promise<z.infer<typeof release
   }
 };
 
-/** The newest stable release of `repository` at or above `minimum`, by semantic version. */
+// The newest stable release of `repository` at or above `minimum`, by semantic version.
 export const trackedRelease = async (repository: string, minimum?: Version): Promise<TrackedRelease> => {
   const releases = await fetchReleases(repository);
   const candidates = releases.flatMap((release): TrackedRelease[] => {
@@ -99,7 +101,7 @@ export const trackedRelease = async (repository: string, minimum?: Version): Pro
   return candidates.reduce((best, candidate) => (compare(candidate.number, best.number) > 0 ? candidate : best));
 };
 
-/** The url and sha256 digest of the one release asset named `name`. */
+// The url and sha256 digest of the one release asset named `name`.
 export const artifactOf = (release: TrackedRelease, name: string): { url: string; sha256: string } => {
   const matches = release.assets.filter((asset) => asset.name === name);
   if (matches.length !== 1) {
@@ -113,7 +115,6 @@ export const artifactOf = (release: TrackedRelease, name: string): { url: string
   return { url: asset.url, sha256: match[1] };
 };
 
-/** The `<major>.<minor>`, `<major>` and `latest` names a release claims. */
 export const versionAliases = (release: TrackedRelease): string[] => {
   const [major, minor] = release.number;
   return [`${major}.${minor}`, `${major}`, "latest"];

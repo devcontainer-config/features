@@ -7,15 +7,12 @@ import { isFile } from "./architecture.js";
 import { download } from "./download.js";
 
 export interface Tarball {
-  /** The payload directory the extracted archive replaces in one rename. */
   cache: string;
   url: string;
   sha256: string;
-  /** The members to extract, under the archive's single top directory; every member when absent. */
   extract?: { top: string; entries: readonly string[] };
 }
 
-/** Fetches and extracts `tarball`; its cache is replaced only once the archive has passed every check. */
 export const stageTarball = async (tarball: Tarball): Promise<void> => {
   const tempPath = `${tarball.cache}.tmp`;
   await rm(tempPath, { recursive: true, force: true });

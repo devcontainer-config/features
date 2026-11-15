@@ -110,9 +110,7 @@ export const formatConfig = async (document: unknown, configPath: string): Promi
 export interface ConfigFile<T> {
   parse: (text: string, source: string) => T;
   read: () => Promise<T>;
-  /** The document's revision on disk, 1 when the file does not exist yet. */
   revision: () => Promise<number>;
-  /** Validates the document, then writes it canonically. */
   write: (config: T) => Promise<void>;
 }
 
