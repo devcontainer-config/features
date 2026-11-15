@@ -40,6 +40,7 @@
     "GLIBCXX",
     "libstdc",
     "noproxy",
-    "pgrep"
+    "pgrep",
+    "varint"
   ]
 }

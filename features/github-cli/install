@@ -1,0 +1,37 @@
+#!/bin/sh
+set -e
+
+mkdir -p /usr/local/bin
+ln -sfn "$PWD/bin/gh" /usr/local/bin/gh
+
+mkdir -p /usr/local/share/man/man1
+cp -p share/man/man1/*.1 /usr/local/share/man/man1/
+
+mkdir -p /usr/local/share/doc/gh
+cp -p LICENSE /usr/local/share/doc/gh/LICENSE
+
+temp=$(mktemp -d)
+trap 'rm -rf "$temp"' EXIT
+mkdir -p "$temp/home" "$temp/config" "$temp/state" "$temp/data" "$temp/cache"
+
+completion() {
+  GH_TELEMETRY=false \
+    HOME="$temp/home" \
+    XDG_CONFIG_HOME="$temp/config" \
+    XDG_STATE_HOME="$temp/state" \
+    XDG_DATA_HOME="$temp/data" \
+    XDG_CACHE_HOME="$temp/cache" \
+    "$PWD/bin/gh" completion -s "$1"
+}
+
+mkdir -p /usr/local/share/bash-completion/completions
+completion bash > /usr/local/share/bash-completion/completions/gh
+
+mkdir -p /usr/local/share/zsh/site-functions
+completion zsh > /usr/local/share/zsh/site-functions/_gh
+
+mkdir -p /usr/local/share/fish/vendor_completions.d
+completion fish > /usr/local/share/fish/vendor_completions.d/gh.fish
+
+mkdir -p /etc/profile.d
+printf '%s\n' 'export GH_TELEMETRY=false' > /etc/profile.d/gh.sh

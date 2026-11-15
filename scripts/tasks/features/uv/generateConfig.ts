@@ -7,13 +7,17 @@ import { checkTagNamespace, configFile } from "@/scripts/tasks/features/config.j
 
 import type { DockerArch, Rid } from "../architecture.js";
 import { dockerArchOptions, ridFor, rids } from "../architecture.js";
-import { verifyAttestation } from "./attestations.js";
+import type { Attestations } from "../attestations.js";
+import { createAttestations } from "../attestations.js";
 import { gnuTriples, muslTriples } from "./paths.js";
 
 const uvIndexUrl = "https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson";
 const pythonIndexUrl = "https://raw.githubusercontent.com/astral-sh/versions/main/v1/python-build-standalone.ndjson";
 const uvSlug = "astral-sh/uv";
 const pythonSlug = "astral-sh/python-build-standalone";
+const uvIdentity = "https://github.com/astral-sh/uv/.github/workflows/release.yml@refs/heads/main";
+const pythonIdentity =
+  "https://github.com/astral-sh/python-build-standalone/.github/workflows/release.yml@refs/heads/main";
 const stablePattern = /^\d+\.\d+\.\d+$/u;
 const buildPattern = /^\d+$/u;
 
@@ -74,6 +78,20 @@ export const featureConfigSchema = z.strictObject({
 type IndexArtifact = z.infer<typeof indexArtifactSchema>;
 type IndexRelease = z.infer<typeof indexReleaseSchema>;
 
+interface ReleaseIdentity {
+  repository: string;
+  tag: string;
+  purl: string;
+  identity: string;
+}
+
+const releaseOf = (repository: string, tag: string, identity: string): ReleaseIdentity => ({
+  repository,
+  tag,
+  purl: `pkg:github/${repository}@${tag}`,
+  identity,
+});
+
 export type Artifact = z.infer<typeof artifactSchema>;
 export type UvVersion = z.infer<typeof uvVersionSchema>;
 export type PythonVersion = z.infer<typeof pythonVersionSchema>;
@@ -100,7 +118,8 @@ const parseIndex = (text: string, source: string): IndexRelease[] =>
     });
 
 const resolveArtifacts = async (
-  slug: string,
+  attestations: Attestations,
+  release: ReleaseIdentity,
   version: string,
   artifacts: readonly IndexArtifact[],
   platforms: Record<DockerArch, string>,
@@ -121,7 +140,8 @@ const resolveArtifacts = async (
     }),
   ) as Record<Rid, Artifact>;
   for (const rid of rids) {
-    await verifyAttestation(slug, resolved[rid].sha256);
+    const artifact = resolved[rid];
+    await attestations.verify({ ...release, sha256: artifact.sha256, url: artifact.url });
   }
   return resolved;
 };
@@ -176,7 +196,10 @@ const trackedPythonReleases = (releases: readonly IndexRelease[]): { build: stri
   return { build, entries };
 };
 
-const pythonVersions = async (releases: readonly IndexRelease[]): Promise<Components["python"]> => {
+const pythonVersions = async (
+  attestations: Attestations,
+  releases: readonly IndexRelease[],
+): Promise<Components["python"]> => {
   const { build, entries } = trackedPythonReleases(releases);
   const resolved = await Promise.all(
     entries.map(async (release) => {
@@ -186,7 +209,14 @@ const pythonVersions = async (releases: readonly IndexRelease[]): Promise<Compon
       const entry: PythonVersion = {
         pythonVersion: version,
         build,
-        ...(await resolveArtifacts(pythonSlug, version, release.artifacts, gnuTriples, "install_only_stripped")),
+        ...(await resolveArtifacts(
+          attestations,
+          releaseOf(pythonSlug, build, pythonIdentity),
+          version,
+          release.artifacts,
+          gnuTriples,
+          "install_only_stripped",
+        )),
       };
       return { key, version, aliases: [`${major}.${minor}`, version], entry } as const;
     }),
@@ -231,6 +261,7 @@ export const parseConfig = config.parse;
 export const readConfig = config.read;
 
 export const generateConfig = async (): Promise<void> => {
+  await using attestations = await createAttestations();
   const uvRelease = trackedUvRelease(parseIndex(await fetchText(uvIndexUrl), uvIndexUrl));
   const pythonReleases = parseIndex(await fetchText(pythonIndexUrl), pythonIndexUrl);
   const [major, minor] = uvRelease.version.split(".");
@@ -240,7 +271,8 @@ export const generateConfig = async (): Promise<void> => {
       uv: {
         versions: {
           [uvRelease.version]: await resolveArtifacts(
-            uvSlug,
+            attestations,
+            releaseOf(uvSlug, uvRelease.version, uvIdentity),
             uvRelease.version,
             uvRelease.artifacts,
             muslTriples,
@@ -249,7 +281,7 @@ export const generateConfig = async (): Promise<void> => {
         },
         aliases: { [uvRelease.version]: [`${major}.${minor}`, "latest"] },
       },
-      python: await pythonVersions(pythonReleases),
+      python: await pythonVersions(attestations, pythonReleases),
     },
   };
   await config.write(document);
